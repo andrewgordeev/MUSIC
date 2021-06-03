@@ -34,6 +34,7 @@ class EOS_base {
     double ***mu_S_tb;
     double ***mu_C_tb;
     double ***cs2_tb;
+    double ***energy_tb;
 
     EOS_base() = default;
     virtual ~EOS_base();

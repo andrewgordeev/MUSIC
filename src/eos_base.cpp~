@@ -38,8 +38,6 @@ double EOS_base::interpolate1D(double e, int table_idx, double ***table) const {
 // as one-dimensional arrays on an equally spacing lattice grid
 // units: e is in 1/fm^4
     //double local_ed = e*hbarc;  // [GeV/fm^3]
-
-  // Using PCE EoS, this instead works to find P(T), e(T), s(T) with even spacing in T - Andrew
     double local_ed = e;
 
     const double e0       = e_bounds[table_idx];
@@ -62,8 +60,6 @@ double EOS_base::interpolate1D(double e, int table_idx, double ***table) const {
     double temp1 = table[table_idx][0][idx_e];
     double temp2 = table[table_idx][0][idx_e + 1];
     result = temp1*(1. - frac_e) + temp2*frac_e;
-    //    std::cout << "Spacing: " << table_idx << "  " << e0 << "  " << delta_e << "  " << N_e << std::endl;
-    //   std::cout << "Interpolate1D: " << table_idx << "  " << e << "  " << result << "  " << get_eps_max() << std::endl; 
     return(result);
 }
 
@@ -128,7 +124,7 @@ double EOS_base::get_entropy(double epsilon, double rhob, double proper_tau) con
 
 
 double EOS_base::get_cs2(double e, double rhob, double proper_tau) const {
-    double f = calculate_velocity_of_sound_sq(e, rhob, proper_tau);
+  double f = calculate_velocity_of_sound_sq(e, rhob, proper_tau);
     return(f);
 }
 
