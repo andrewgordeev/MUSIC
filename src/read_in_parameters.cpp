@@ -1032,7 +1032,7 @@ void check_parameters(InitData &parameter_list, std::string input_file) {
         exit(1);
     }
 
-    if (parameter_list.whichEOS > 17 || parameter_list.whichEOS < 0) {
+    if (parameter_list.whichEOS > 18 || parameter_list.whichEOS < 0) {
         music_message << "EOS_to_use unspecified or invalid option: "
                       << parameter_list.whichEOS;
         music_message.flush("error");

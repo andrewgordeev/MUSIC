@@ -154,7 +154,7 @@ double Diss::Make_uWSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt_
                            int mu, int nu, int rk_flag, double theta_local,
                            DumuVec &a_local, VelocityShearVec &sigma_1d) {
     double tempf;
-    double SW, shear, shear_to_s, T, epsilon, rhob;
+    double SW, shear, shear_to_s, T, epsilon, rhob, proper_tau;
     double NS_term;
 
     auto sigma = Util::UnpackVecToMatrix(sigma_1d);
@@ -163,12 +163,14 @@ double Diss::Make_uWSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt_
     if (rk_flag == 0) {
         epsilon = grid_pt->epsilon;
         rhob = grid_pt->rhob;
+	proper_tau = grid_pt->proper_tau;
     } else {
         epsilon = grid_pt_prev->epsilon;
         rhob = grid_pt_prev->rhob;
+	proper_tau = grid_pt_prev->proper_tau;
     }
 
-    T = eos.get_temperature(epsilon, rhob);
+    T = eos.get_temperature(epsilon, rhob, proper_tau);
 
     shear_to_s = transport_coeffs_.get_eta_over_s(T);
 
@@ -185,7 +187,7 @@ double Diss::Make_uWSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt_
     //                Defining transport coefficients                     //
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    double pressure = eos.get_pressure(epsilon, rhob);
+    double pressure = eos.get_pressure(epsilon, rhob, proper_tau);
     shear = (shear_to_s)*(epsilon + pressure)/(T + 1e-15);
     double tau_pi = (transport_coeffs_.get_shear_relax_time_factor()
                      *shear/(epsilon + pressure + 1e-15));
@@ -627,13 +629,15 @@ double Diss::Make_uPiSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt
         include_coupling_to_shear = 1;
     }
 
-    double epsilon, rhob;
+    double epsilon, rhob, proper_tau;
     if (rk_flag == 0) {
         epsilon = grid_pt->epsilon;
         rhob = grid_pt->rhob;
+	proper_tau = grid_pt->proper_tau;
     } else {
         epsilon = grid_pt_prev->epsilon;
         rhob = grid_pt_prev->rhob;
+	proper_tau = grid_pt->proper_tau;
     }
 
     // defining bulk viscosity coefficient
@@ -642,11 +646,11 @@ double Diss::Make_uPiSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt
     //s_den = eos.get_entropy(epsilon, rhob);
     //shear = (DATA.shear_to_s)*s_den;   
     // shear viscosity = constant * (e + P)/T
-    double temperature = eos.get_temperature(epsilon, rhob);
+    double temperature = eos.get_temperature(epsilon, rhob, proper_tau);
 
     // cs2 is the velocity of sound squared
-    double cs2 = eos.get_cs2(epsilon, rhob);
-    double pressure = eos.get_pressure(epsilon, rhob);
+    double cs2 = eos.get_cs2(epsilon, rhob, proper_tau);
+    double pressure = eos.get_pressure(epsilon, rhob, proper_tau);
 
     // T dependent bulk viscosity from Gabriel
     bulk = transport_coeffs_.get_zeta_over_s(temperature);
@@ -748,21 +752,23 @@ double Diss::Make_uqSource(
     int rk_flag, double theta_local, DumuVec &a_local,
     VelocityShearVec &sigma_1d, DmuMuBoverTVec &baryon_diffusion_vec) {
 
-    double epsilon, rhob;
+    double epsilon, rhob, proper_tau;
     if (rk_flag == 0) {
         epsilon = grid_pt->epsilon;
         rhob = grid_pt->rhob;
+	proper_tau = grid_pt->proper_tau;
     } else {
         epsilon = grid_pt_prev->epsilon;
         rhob = grid_pt_prev->rhob;
+	proper_tau = grid_pt->proper_tau;
     }
-    double pressure = eos.get_pressure(epsilon, rhob);
-    double T        = eos.get_temperature(epsilon, rhob);
+    double pressure = eos.get_pressure(epsilon, rhob, proper_tau);
+    double T        = eos.get_temperature(epsilon, rhob, proper_tau);
 
     double kappa_coefficient = DATA.kappa_coefficient;
     double tau_rho = kappa_coefficient/(T + 1e-15);
     tau_rho = std::max(3.*DATA.delta_tau, tau_rho);
-    double mub     = eos.get_muB(epsilon, rhob);
+    double mub     = eos.get_muB(epsilon, rhob, proper_tau);
     double alpha   = mub/T;
     double kappa   = kappa_coefficient*(rhob/(3.*T*tanh(alpha) + 1e-15)
                                       - rhob*rhob/(epsilon + pressure));
@@ -954,16 +960,18 @@ void Diss::output_kappa_T_and_muB_dependence() {
     int nrhob = 1000;
     double drhob = (rhob_max - rhob_min)/(nrhob - 1.);
 
+    double proper_tau = 0;  // For this and below functions, output is only for the initial EoS - Andrew
+
     for (int i = 0; i < ne; i++) {
         double e_local = e_min + i*de;
         for (int j = 0; j < nrhob; j++) {
             double rhob_local = rhob_min + j*drhob;
             rhob_local *= rhob_local;
-            double mu_B_local = eos.get_muB(e_local, rhob_local);
+            double mu_B_local = eos.get_muB(e_local, rhob_local, proper_tau);
             if (mu_B_local*hbarc > 0.78)
                 continue;  // discard points out of the table
-            double p_local = eos.get_pressure(e_local, rhob_local);
-            double T_local = eos.get_temperature(e_local, rhob_local);
+            double p_local = eos.get_pressure(e_local, rhob_local, proper_tau);
+            double T_local = eos.get_temperature(e_local, rhob_local, proper_tau);
             double alpha_local = mu_B_local/T_local;
 
             double kappa_local = (DATA.kappa_coefficient
@@ -991,6 +999,7 @@ void Diss::output_kappa_along_const_sovernB() {
     double s_max = 100.0;      // 1/fm^3
     double ds = 0.005;         // 1/fm^3
     int ns = static_cast<int>((s_max - s_0)/ds) + 1;
+    double proper_tau = 0;
     for (int i = 0; i < array_length; i++) {
         std::ostringstream file_name;
         file_name << "kappa_B_sovernB_" << sovernB[i] << ".dat";
@@ -1001,11 +1010,11 @@ void Diss::output_kappa_along_const_sovernB() {
         for (int j = 0; j < ns; j++) {
             double s_local = s_0 + j*ds;
             double nB_local = s_local/sovernB[i];
-            double e_local = eos.get_s2e(s_local, nB_local);
-            double s_check = eos.get_entropy(e_local, nB_local);
-            double p_local = eos.get_pressure(e_local, nB_local);
-            double temperature = eos.get_temperature(e_local, nB_local);
-            double mu_B = eos.get_muB(e_local, nB_local);
+            double e_local = eos.get_s2e(s_local, nB_local, proper_tau);
+            double s_check = eos.get_entropy(e_local, nB_local, proper_tau);
+            double p_local = eos.get_pressure(e_local, nB_local, proper_tau);
+            double temperature = eos.get_temperature(e_local, nB_local, proper_tau);
+            double mu_B = eos.get_muB(e_local, nB_local, proper_tau);
             if (mu_B*hbarc > 0.78)
                 continue;  // discard points out of the table
             double alpha_local = mu_B/temperature;
@@ -1043,19 +1052,20 @@ void Diss::output_eta_over_s_T_and_muB_dependence() {
     double rhob_max = sqrt(10.0);  // fm^-3
     int nrhob       = 1000;
     double drhob    = (rhob_max - rhob_min)/(nrhob - 1.);
-
+    double proper_tau = 0;
+    
     double etaT_over_enthropy = DATA.shear_to_s;
     for (int i = 0; i < ne; i++) {
         double e_local = e_min + i*de;
         for (int j = 0; j < nrhob; j++) {
             double rhob_local = rhob_min + j*drhob;
             rhob_local *= rhob_local;
-            double mu_B_local = eos.get_muB(e_local, rhob_local);
+            double mu_B_local = eos.get_muB(e_local, rhob_local, proper_tau);
             if (mu_B_local*hbarc > 0.78)
                 continue;  // discard points out of the table
-            double p_local = eos.get_pressure(e_local, rhob_local);
-            double s_local = eos.get_entropy(e_local, rhob_local);
-            double T_local = eos.get_temperature(e_local, rhob_local);
+            double p_local = eos.get_pressure(e_local, rhob_local, proper_tau);
+            double s_local = eos.get_entropy(e_local, rhob_local, proper_tau);
+            double T_local = eos.get_temperature(e_local, rhob_local, proper_tau);
 
             double eta_over_s = (
                 etaT_over_enthropy*(e_local + p_local)/(T_local*s_local));
@@ -1083,6 +1093,7 @@ void Diss::output_eta_over_s_along_const_sovernB() {
     double s_max = 100.0;      // 1/fm^3
     double ds = 0.005;         // 1/fm^3
     int ns = static_cast<int>((s_max - s_0)/ds) + 1;
+    double proper_tau = 0;
     for (int i = 0; i < array_length; i++) {
         std::ostringstream file_name;
         file_name << "eta_over_s_sovernB_" << sovernB[i] << ".dat";
@@ -1093,11 +1104,11 @@ void Diss::output_eta_over_s_along_const_sovernB() {
         for (int j = 0; j < ns; j++) {
             double s_local = s_0 + j*ds;
             double nB_local = s_local/sovernB[i];
-            double e_local = eos.get_s2e(s_local, nB_local);
-            double s_check = eos.get_entropy(e_local, nB_local);
-            double p_local = eos.get_pressure(e_local, nB_local);
-            double temperature = eos.get_temperature(e_local, nB_local);
-            double mu_B = eos.get_muB(e_local, nB_local);
+            double e_local = eos.get_s2e(s_local, nB_local, proper_tau);
+            double s_check = eos.get_entropy(e_local, nB_local, proper_tau);
+            double p_local = eos.get_pressure(e_local, nB_local, proper_tau);
+            double temperature = eos.get_temperature(e_local, nB_local, proper_tau);
+            double mu_B = eos.get_muB(e_local, nB_local, proper_tau);
             if (mu_B*hbarc > 0.78)
                 continue;  // discard points out of the table
 

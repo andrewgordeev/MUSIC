@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#PBS -N utilities
+#PBS -l walltime=12:00:00
+#PBS -l nodes=1:ppn=16
+#PBS -S /bin/bash
+#PBS -e test.err
+#PBS -o test.log
+#PBS -A cqn-654-ad
+#PBS -q sw2
+#PBS -d /home/andrew/Documents/Work/music-hydro/utilities
+
+results_folder=results
+
+export OMP_NUM_THREADS=16
+# hydro evolution
+./mpihydro music_input_2 1>mode_2.log 2>mode_2.err
+./sweeper.sh $results_folder
+# multiple Cooper-Frye in sequence ... 

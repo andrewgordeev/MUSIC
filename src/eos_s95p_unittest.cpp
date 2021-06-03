@@ -27,9 +27,9 @@ TEST_CASE("test speed of sound squared") {
     EOS_s95p test;
     test.initialize_eos(7);
     CHECK(test.get_EOS_id() == 7);
-    CHECK(test.get_cs2(1.0, 0.0) == doctest::Approx(0.15963).epsilon(0.0001));
-    CHECK(test.get_cs2(1.0, 2.0) == doctest::Approx(0.15963).epsilon(0.0001));
-    CHECK(test.get_cs2(1.0, -3.0) == doctest::Approx(0.15963).epsilon(0.0001));
+    CHECK(test.get_cs2(1.0, 0.0, 0.0) == doctest::Approx(0.15963).epsilon(0.0001));
+    CHECK(test.get_cs2(1.0, 2.0, 0.0) == doctest::Approx(0.15963).epsilon(0.0001));
+    CHECK(test.get_cs2(1.0, -3.0, 0.0) == doctest::Approx(0.15963).epsilon(0.0001));
 
 }
 
@@ -39,9 +39,9 @@ TEST_CASE("test dPdrho") {
     EOS_s95p test;
     test.initialize_eos(2);
     CHECK(test.get_EOS_id() == 2);
-    CHECK(test.p_rho_func(1.0, 1.0)  == 0.);
-    CHECK(test.p_rho_func(2.0, 1.0)  == 0.);
-    CHECK(test.p_rho_func(1.0, -1.0) == 0.);
+    CHECK(test.p_rho_func(1.0, 1.0, 0.0)  == 0.);
+    CHECK(test.p_rho_func(2.0, 1.0, 0.0)  == 0.);
+    CHECK(test.p_rho_func(1.0, -1.0, 0.0) == 0.);
 }
 
 
@@ -55,9 +55,9 @@ TEST_CASE("test muB") {
     EOS_s95p test;
     test.initialize_eos(4);
     CHECK(test.get_EOS_id() == 4);
-    CHECK(test.get_mu(1.0, 1.0)  == 0.);
-    CHECK(test.get_mu(2.0, 1.0)  == 0.);
-    CHECK(test.get_mu(1.0, -1.0) == 0.);
+    CHECK(test.get_mu(1.0, 1.0, 0.0)  == 0.);
+    CHECK(test.get_mu(2.0, 1.0, 0.0)  == 0.);
+    CHECK(test.get_mu(1.0, -1.0, 0.0) == 0.);
 }
 
 
@@ -66,9 +66,9 @@ TEST_CASE("test muS") {
     EOS_s95p test;
     test.initialize_eos(5);
     CHECK(test.get_EOS_id() == 5);
-    CHECK(test.get_muS(1.0, 1.0)  == 0.);
-    CHECK(test.get_muS(2.0, 1.0)  == 0.);
-    CHECK(test.get_muS(1.0, -1.0) == 0.);
+    CHECK(test.get_muS(1.0, 1.0, 0.0)  == 0.);
+    CHECK(test.get_muS(2.0, 1.0, 0.0)  == 0.);
+    CHECK(test.get_muS(1.0, -1.0, 0.0) == 0.);
 }
 
 

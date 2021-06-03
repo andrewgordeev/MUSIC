@@ -856,19 +856,40 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
                 Wyeta_center   = Wmunu_regulated[2][3];
                 Wetaeta_center = Wmunu_regulated[3][3];
 
+		// proper time
+                cube[0][0][0][0] = arena_freezeout(ix      , iy      , ieta        ).proper_tau;
+                cube[0][0][1][0] = arena_freezeout(ix      , iy+fac_y, ieta        ).proper_tau;
+                cube[0][1][0][0] = arena_freezeout(ix+fac_x, iy      , ieta        ).proper_tau;
+                cube[0][1][1][0] = arena_freezeout(ix+fac_x, iy+fac_y, ieta        ).proper_tau;
+                cube[1][0][0][0] = arena_current  (ix      , iy      , ieta        ).proper_tau;
+                cube[1][0][1][0] = arena_current  (ix      , iy+fac_y, ieta        ).proper_tau;
+                cube[1][1][0][0] = arena_current  (ix+fac_x, iy      , ieta        ).proper_tau;
+                cube[1][1][1][0] = arena_current  (ix+fac_x, iy+fac_y, ieta        ).proper_tau;
+                cube[0][0][0][1] = arena_freezeout(ix      , iy      , ieta+fac_eta).proper_tau;
+                cube[0][0][1][1] = arena_freezeout(ix      , iy+fac_y, ieta+fac_eta).proper_tau;
+                cube[0][1][0][1] = arena_freezeout(ix+fac_x, iy      , ieta+fac_eta).proper_tau;
+                cube[0][1][1][1] = arena_freezeout(ix+fac_x, iy+fac_y, ieta+fac_eta).proper_tau;
+                cube[1][0][0][1] = arena_current  (ix      , iy      , ieta+fac_eta).proper_tau;
+                cube[1][0][1][1] = arena_current  (ix      , iy+fac_y, ieta+fac_eta).proper_tau;
+                cube[1][1][0][1] = arena_current  (ix+fac_x, iy      , ieta+fac_eta).proper_tau;
+                cube[1][1][1][1] = arena_current  (ix+fac_x, iy+fac_y, ieta+fac_eta).proper_tau;
+                double proper_tau_center = 
+                    Util::four_dimension_linear_interpolation(
+                                lattice_spacing, x_fraction, cube);
+
                 // 4-dimension interpolation done
-                const double TFO = eos.get_temperature(epsFO, rhob_center);
+                const double TFO = eos.get_temperature(epsFO, rhob_center, proper_tau_center);
                 if (TFO < 0) {
                     music_message << "TFO=" << TFO
                                   << "<0. ERROR. exiting.";
                     music_message.flush("error");
                     exit(1);
                 }
-                const double muB = eos.get_muB(epsFO, rhob_center);
-                const double muS = eos.get_muS(epsFO, rhob_center);
-                const double muC = eos.get_muC(epsFO, rhob_center);
+                const double muB = eos.get_muB(epsFO, rhob_center, proper_tau_center);
+                const double muS = eos.get_muS(epsFO, rhob_center, proper_tau_center);
+                const double muC = eos.get_muC(epsFO, rhob_center, proper_tau_center);
 
-                const double pressure = eos.get_pressure(epsFO, rhob_center);
+                const double pressure = eos.get_pressure(epsFO, rhob_center, proper_tau_center);
                 const double eps_plus_p_over_T_FO = (epsFO + pressure)/TFO;
 
                 // finally output results !!!!
@@ -1053,6 +1074,9 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
             // baryon density rho_b
             const double rhob_center = arena_current(ix, iy, ieta).rhob;
 
+	    // proper time
+	    const double proper_tau_center = arena_current(ix, iy, ieta).proper_tau;
+
             // baryon diffusion current
             double qtau_center = arena_current(ix, iy, ieta).Wmunu[10];
             double qx_center   = arena_current(ix, iy, ieta).Wmunu[11];
@@ -1110,7 +1134,7 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
 
             // get other thermodynamical quantities
             double e_local   = arena_current(ix, iy, ieta).epsilon;
-            double T_local   = eos.get_temperature(e_local, rhob_center);
+            double T_local   = eos.get_temperature(e_local, rhob_center, proper_tau_center);
             if (T_local < 0) {
                 music_message << "Evolve::FreezeOut_equal_tau_Surface: "
                               << "T_local = " << T_local
@@ -1118,11 +1142,11 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
                 music_message.flush("error");
                 exit(1);
             }
-            double muB_local = eos.get_muB(e_local, rhob_center);
-            double muS_local = eos.get_muS(e_local, rhob_center);
-            double muC_local = eos.get_muC(e_local, rhob_center);
+            double muB_local = eos.get_muB(e_local, rhob_center, proper_tau_center);
+            double muS_local = eos.get_muS(e_local, rhob_center, proper_tau_center);
+            double muC_local = eos.get_muC(e_local, rhob_center, proper_tau_center);
 
-            double pressure = eos.get_pressure(e_local, rhob_center);
+            double pressure = eos.get_pressure(e_local, rhob_center, proper_tau_center);
             double eps_plus_p_over_T = (e_local + pressure)/T_local;
 
             // finally output results
@@ -1629,11 +1653,24 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                     Wyeta_center   = Wmunu_regulated[2][3];
                     Wetaeta_center = Wmunu_regulated[3][3];
 
-                    // 3-dimension interpolation done
-                    double TFO = eos.get_temperature(epsFO, rhob_center);
-                    double muB = eos.get_muB(epsFO, rhob_center);
-                    double muS_local = eos.get_muS(epsFO, rhob_center);
-                    double muC_local = eos.get_muC(epsFO, rhob_center);
+		    // proper time
+                    cube[0][0][0] = arena_freezeout(ix      , iy      , 0).proper_tau;
+                    cube[0][0][1] = arena_freezeout(ix      , iy+fac_y, 0).proper_tau;
+                    cube[0][1][0] = arena_freezeout(ix+fac_x, iy      , 0).proper_tau;
+                    cube[0][1][1] = arena_freezeout(ix+fac_x, iy+fac_y, 0).proper_tau;
+                    cube[1][0][0] = arena_current  (ix      , iy      , 0).proper_tau;
+                    cube[1][0][1] = arena_current  (ix      , iy+fac_y, 0).proper_tau;
+                    cube[1][1][0] = arena_current  (ix+fac_x, iy      , 0).proper_tau;
+                    cube[1][1][1] = arena_current  (ix+fac_x, iy+fac_y, 0).proper_tau;
+                    double proper_tau_center = (
+                        Util::three_dimension_linear_interpolation(
+                                        lattice_spacing, x_fraction, cube));
+
+		    // 3-dimension interpolation done
+                    double TFO = eos.get_temperature(epsFO, rhob_center, proper_tau_center);
+                    double muB = eos.get_muB(epsFO, rhob_center, proper_tau_center);
+                    double muS_local = eos.get_muS(epsFO, rhob_center, proper_tau_center);
+                    double muC_local = eos.get_muC(epsFO, rhob_center, proper_tau_center);
                     if (TFO < 0) {
                         music_message << "TFO=" << TFO
                                       << "<0. ERROR. exiting.";
@@ -1641,7 +1678,7 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                         exit(1);
                     }
 
-                    double pressure = eos.get_pressure(epsFO, rhob_center);
+                    double pressure = eos.get_pressure(epsFO, rhob_center, proper_tau_center);
                     double eps_plus_p_over_T_FO = (epsFO + pressure)/TFO;
 
                     // finally output results !!!!
@@ -1781,7 +1818,7 @@ void Evolve::regulate_Wmunu(const double u[], const double Wmunu[4][4],
 
 void Evolve::initialize_freezeout_surface_info() {
     if (DATA.useEpsFO == 0) {
-        const double e_freeze = eos.get_T2e(DATA.TFO, 0.0)*Util::hbarc;
+        const double e_freeze = eos.get_T2e(DATA.TFO, 0.0, 0.0)*Util::hbarc;
         n_freeze_surf = 1;
         for (int isurf = 0; isurf < n_freeze_surf; isurf++) {
             epsFO_list.push_back(e_freeze);

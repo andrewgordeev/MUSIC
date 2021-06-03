@@ -2,7 +2,7 @@
 
 import sys
 from os import path
-from utilities.music_parameters_dict import *
+from music_parameters_dict import *
 
 class color:
     """

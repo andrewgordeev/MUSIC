@@ -484,13 +484,14 @@ void Init::initial_IPGlasma_XY(int ieta, SCGrid &arena_prev,
             } else {
                 double local_sd = (temp_profile_ed[ix][iy]*DATA.sFactor
                                    *eta_envelop_ed);
-                epsilon = eos.get_s2e(local_sd, rhob);
+                epsilon = eos.get_s2e(local_sd, rhob, DATA.tau0);
             }
             if (epsilon < 0.00000000001)
                 epsilon = 0.00000000001;
 
             arena_current(ix, iy, ieta).epsilon = epsilon;
             arena_current(ix, iy, ieta).rhob = rhob;
+	    arena_current(ix, iy, ieta).proper_tau = DATA.tau0;
 
             arena_current(ix, iy, ieta).u[0] = temp_profile_utau[ix][iy];
             arena_current(ix, iy, ieta).u[1] = temp_profile_ux[ix][iy];
@@ -604,19 +605,21 @@ void Init::initial_IPGlasma_XY_with_pi(int ieta, SCGrid &arena_prev,
             int idx = iy + ix*ny;
             double rhob = 0.0;
             double epsilon = 0.0;
+	    
             if (entropy_flag == 0) {
                 epsilon = (temp_profile_ed[idx]*eta_envelop_ed
                            *DATA.sFactor/hbarc);  // 1/fm^4
             } else {
                 double local_sd = (temp_profile_ed[idx]*DATA.sFactor
                                    *eta_envelop_ed);
-                epsilon = eos.get_s2e(local_sd, rhob);
+                epsilon = eos.get_s2e(local_sd, rhob, DATA.tau0);
             }
             if (epsilon < 0.00000000001)
                 epsilon = 0.00000000001;
 
             arena_current(ix, iy, ieta).epsilon = epsilon;
             arena_current(ix, iy, ieta).rhob = rhob;
+	    arena_current(ix, iy, ieta).proper_tau = tau0;
 
             if (DATA.Initial_profile == 9 || DATA.Initial_profile == 91) {
                 arena_current(ix, iy, ieta).u[0] = temp_profile_utau[idx];
@@ -629,9 +632,10 @@ void Init::initial_IPGlasma_XY_with_pi(int ieta, SCGrid &arena_prev,
                 arena_current(ix, iy, ieta).u[2] = 0.0;
                 arena_current(ix, iy, ieta).u[3] = 0.0;
             }
-            
+
             if (DATA.Initial_profile == 9) {
-                double pressure = eos.get_pressure(epsilon, rhob);
+	        double pressure = eos.get_pressure(epsilon, rhob, DATA.tau0);
+	        
                 arena_current(ix, iy, ieta).pi_b = epsilon/3. - pressure;
 
                 arena_current(ix, iy, ieta).Wmunu[0] = temp_profile_pitautau[idx];
@@ -649,6 +653,22 @@ void Init::initial_IPGlasma_XY_with_pi(int ieta, SCGrid &arena_prev,
             arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
         }
     }
+
+    // const std::string out_name = "evolution_xyeta.dat";
+    // std::string out_open_mode = "w";
+
+    // FILE *out_file = NULL;
+
+    // out_file = fopen(out_name.c_str(), out_open_mode.c_str());
+    
+    // for (int i = 0; i < 100000; i++) {
+    //    double cs2_local = eos.get_cs2(0.01*i, 0, 0.0);
+    //    double temp = eos.get_temperature(0.01*i, 0, 0.0);
+    //    fprintf(out_file, "%e %e\n", temp*hbarc, cs2_local);
+    // }
+
+    // fclose(out_file);
+    // exit(99);
 }
 
 void Init::initial_MCGlb_with_rhob(SCGrid &arena_prev, SCGrid &arena_current) {
@@ -708,12 +728,13 @@ void Init::initial_MCGlb_with_rhob(SCGrid &arena_prev, SCGrid &arena_current) {
                         (temp_profile_TA[ix][iy]*eta_envelop_left
                          + temp_profile_TB[ix][iy]*eta_envelop_right)
                         *DATA.sFactor);         // 1/fm^3
-                    epsilon = eos.get_s2e(local_sd, rhob);
+                    epsilon = eos.get_s2e(local_sd, rhob, DATA.tau0);
                 }
                 epsilon = std::max(1e-12, epsilon);
 
                 arena_current(ix, iy, ieta).epsilon = epsilon;
                 arena_current(ix, iy, ieta).rhob = rhob;
+		arena_current(ix, iy, ieta).proper_tau = DATA.tau0;
 
                 arena_current(ix, iy, ieta).u[0] = 1.0;
                 arena_current(ix, iy, ieta).u[1] = 0.0;
@@ -839,7 +860,7 @@ void Init::initial_AMPT_XY(int ieta, SCGrid &arena_prev,
 
 
 void Init::get_jetscape_preequilibrium_vectors(
-        vector<double> e_in, vector<double> P_in,
+        vector<double> e_in,
         vector<double> u_tau_in, vector<double> u_x_in,
         vector<double> u_y_in,   vector<double> u_eta_in,
         vector<double> pi_00_in, vector<double> pi_01_in,
@@ -849,7 +870,6 @@ void Init::get_jetscape_preequilibrium_vectors(
         vector<double> pi_23_in, vector<double> pi_33_in,
         vector<double> Bulk_pi_in) {
     jetscape_initial_energy_density = e_in;
-    jetscape_initial_pressure       = P_in;
     jetscape_initial_u_tau          = u_tau_in;
     jetscape_initial_u_x            = u_x_in;
     jetscape_initial_u_y            = u_y_in;
@@ -873,7 +893,7 @@ void Init::initial_with_jetscape(int ieta, SCGrid &arena_prev,
     const int nx = arena_current.nX();
     const int ny = arena_current.nY();
     const int neta = arena_current.nEta();
-
+    
     for (int ix = 0; ix < nx; ix++) {
         for (int iy = 0; iy< ny; iy++) {
             const double rhob = 0.0;
@@ -887,27 +907,24 @@ void Init::initial_with_jetscape(int ieta, SCGrid &arena_prev,
 
             arena_current(ix, iy, ieta).epsilon = epsilon;
             arena_current(ix, iy, ieta).rhob = rhob;
-            double pressure = eos.get_pressure(epsilon, rhob);
 
             arena_current(ix, iy, ieta).u[0] = jetscape_initial_u_tau[idx];
             arena_current(ix, iy, ieta).u[1] = jetscape_initial_u_x[idx];
             arena_current(ix, iy, ieta).u[2] = jetscape_initial_u_y[idx];
             arena_current(ix, iy, ieta).u[3] = DATA.tau0*jetscape_initial_u_eta[idx];
 
-            arena_current(ix, iy, ieta).pi_b = (DATA.sFactor/hbarc*(
-                jetscape_initial_pressure[idx] + jetscape_initial_bulk_pi[idx])
-                - pressure);
+            arena_current(ix, iy, ieta).pi_b = jetscape_initial_bulk_pi[idx]/hbarc;
 
-            arena_current(ix, iy, ieta).Wmunu[0] = DATA.sFactor*jetscape_initial_pi_00[idx]/hbarc;
-            arena_current(ix, iy, ieta).Wmunu[1] = DATA.sFactor*jetscape_initial_pi_01[idx]/hbarc;
-            arena_current(ix, iy, ieta).Wmunu[2] = DATA.sFactor*jetscape_initial_pi_02[idx]/hbarc;
-            arena_current(ix, iy, ieta).Wmunu[3] = DATA.sFactor*jetscape_initial_pi_03[idx]/hbarc*DATA.tau0;
-            arena_current(ix, iy, ieta).Wmunu[4] = DATA.sFactor*jetscape_initial_pi_11[idx]/hbarc;
-            arena_current(ix, iy, ieta).Wmunu[5] = DATA.sFactor*jetscape_initial_pi_12[idx]/hbarc;
-            arena_current(ix, iy, ieta).Wmunu[6] = DATA.sFactor*jetscape_initial_pi_13[idx]/hbarc*DATA.tau0;
-            arena_current(ix, iy, ieta).Wmunu[7] = DATA.sFactor*jetscape_initial_pi_22[idx]/hbarc;
-            arena_current(ix, iy, ieta).Wmunu[8] = DATA.sFactor*jetscape_initial_pi_23[idx]/hbarc*DATA.tau0;
-            arena_current(ix, iy, ieta).Wmunu[9] = DATA.sFactor*jetscape_initial_pi_33[idx]/hbarc*DATA.tau0*DATA.tau0;
+            arena_current(ix, iy, ieta).Wmunu[0] = jetscape_initial_pi_00[idx]/hbarc;
+            arena_current(ix, iy, ieta).Wmunu[1] = jetscape_initial_pi_01[idx]/hbarc;
+            arena_current(ix, iy, ieta).Wmunu[2] = jetscape_initial_pi_02[idx]/hbarc;
+            arena_current(ix, iy, ieta).Wmunu[3] = jetscape_initial_pi_03[idx]/hbarc*DATA.tau0;
+            arena_current(ix, iy, ieta).Wmunu[4] = jetscape_initial_pi_11[idx]/hbarc;
+            arena_current(ix, iy, ieta).Wmunu[5] = jetscape_initial_pi_12[idx]/hbarc;
+            arena_current(ix, iy, ieta).Wmunu[6] = jetscape_initial_pi_13[idx]/hbarc*DATA.tau0;
+            arena_current(ix, iy, ieta).Wmunu[7] = jetscape_initial_pi_22[idx]/hbarc;
+            arena_current(ix, iy, ieta).Wmunu[8] = jetscape_initial_pi_23[idx]/hbarc*DATA.tau0;
+            arena_current(ix, iy, ieta).Wmunu[9] = jetscape_initial_pi_33[idx]/hbarc*DATA.tau0*DATA.tau0;
 
             arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
         }
@@ -917,7 +934,6 @@ void Init::initial_with_jetscape(int ieta, SCGrid &arena_prev,
 void Init::clean_up_jetscape_arrays() {
     // clean up
     jetscape_initial_energy_density.clear();
-    jetscape_initial_pressure.clear();
     jetscape_initial_u_tau.clear();
     jetscape_initial_u_x.clear();
     jetscape_initial_u_y.clear();

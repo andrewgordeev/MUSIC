@@ -159,7 +159,8 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
             for (int ix = 0; ix < arena.nX(); ix += n_skip_x) {
                 double e_local    = arena(ix, iy, ieta).epsilon;  // 1/fm^4
                 double rhob_local = arena(ix, iy, ieta).rhob;     // 1/fm^3
-                double p_local = eos.get_pressure(e_local, rhob_local);
+		double proper_tau = arena(ix, iy, ieta).proper_tau; //fm
+                double p_local = eos.get_pressure(e_local, rhob_local, proper_tau);
                 double utau = arena(ix, iy, ieta).u[0];
                 double ux   = arena(ix, iy, ieta).u[1];
                 double uy   = arena(ix, iy, ieta).u[2];
@@ -170,9 +171,9 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
                 double uz = ueta*cosh_eta + utau*sinh_eta;
                 double vz = uz/ut;
 
-                double T_local   = eos.get_temperature(e_local, rhob_local);
-                double cs2_local = eos.get_cs2(e_local, rhob_local);
-                double muB_local = eos.get_muB(e_local, rhob_local);
+                double T_local   = eos.get_temperature(e_local, rhob_local, proper_tau);
+                double cs2_local = eos.get_cs2(e_local, rhob_local, proper_tau);
+                double muB_local = eos.get_muB(e_local, rhob_local, proper_tau);
                 double enthropy  = e_local + p_local;  // [1/fm^4]
 
                 double Wtautau = 0.0;
@@ -221,8 +222,8 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
 
                 // exclude the actual coordinates from the output to save space:
                 if (DATA.outputBinaryEvolution == 0) {
-                    fprintf(out_file_xyeta, "%e %e %e %e %e\n",
-                            T_local*hbarc, muB_local*hbarc, vx, vy, vz);
+                    fprintf(out_file_xyeta, "%e %e %e %e %e %e\n",
+                            T_local*hbarc, muB_local*hbarc, vx, vy, vz, proper_tau);
                     if (DATA.viscosity_flag == 1) {
                         if (DATA.turn_on_shear) {
                             fprintf(out_file_W_xyeta,
@@ -342,7 +343,8 @@ void Cell_info::calculate_inverse_Reynolds_numbers(
 
     const double e_local  = grid_pt.epsilon;
     const double rhob     = grid_pt.rhob;
-    const double pressure = eos.get_pressure(e_local, rhob);
+    const double proper_tau = grid_pt.proper_tau;
+    const double pressure = eos.get_pressure(e_local, rhob, proper_tau);
 
     const double pi_00 = grid_pt.Wmunu[0];
     const double pi_01 = grid_pt.Wmunu[1];
@@ -386,7 +388,8 @@ void Cell_info::OutputEvolutionDataXYEta_memory(
 
                 double e_local    = arena(ix, iy, ieta).epsilon;  // 1/fm^4
                 double rhob_local = arena(ix, iy, ieta).rhob;     // 1/fm^3
-                double p_local = eos.get_pressure(e_local, rhob_local);
+		double proper_tau = arena(ix, iy, ieta).proper_tau; // fm
+                double p_local = eos.get_pressure(e_local, rhob_local, proper_tau);
                 double utau = arena(ix, iy, ieta).u[0];
                 double ux   = arena(ix, iy, ieta).u[1];
                 double uy   = arena(ix, iy, ieta).u[2];
@@ -397,8 +400,8 @@ void Cell_info::OutputEvolutionDataXYEta_memory(
                 double uz = ueta*cosh_eta + utau*sinh_eta;
                 double vz = uz/ut;
 
-                double T_local   = eos.get_temperature(e_local, rhob_local);
-                double s_local   = eos.get_entropy(e_local, rhob_local);
+                double T_local   = eos.get_temperature(e_local, rhob_local, proper_tau);
+                double s_local   = eos.get_entropy(e_local, rhob_local, proper_tau);
 
                 hydro_info_ptr.dump_ideal_info_to_memory(
                     tau, eta, e_local, p_local, s_local, T_local, vx, vy, vz);
@@ -483,21 +486,22 @@ void Cell_info::OutputEvolutionDataXYEta_chun(SCGrid &arena,
             for (int ix = 0; ix < arena.nX(); ix += n_skip_x) {
                 double e_local    = arena(ix, iy, ieta).epsilon;  // 1/fm^4
                 double rhob_local = arena(ix, iy, ieta).rhob;     // 1/fm^3
-                double p_local    = eos.get_pressure(e_local, rhob_local);
+		double proper_tau = arena(ix, iy, ieta).proper_tau; // fm
+                double p_local    = eos.get_pressure(e_local, rhob_local, proper_tau);
 
                 double ux   = arena(ix, iy, ieta).u[1];
                 double uy   = arena(ix, iy, ieta).u[2];
                 double ueta = arena(ix, iy, ieta).u[3];
 
                 // T_local is in 1/fm
-                double T_local = eos.get_temperature(e_local, rhob_local);
+                double T_local = eos.get_temperature(e_local, rhob_local, proper_tau);
 
                 if (T_local*hbarc < DATA.output_evolution_T_cut) continue;
                 // only ouput fluid cells that are above cut-off temperature
 
                 double muB_local = 0.0;
                 if (DATA.turn_on_rhob == 1)
-                    muB_local = eos.get_muB(e_local, rhob_local);
+		    muB_local = eos.get_muB(e_local, rhob_local, proper_tau);
 
                 double div_factor = e_local + p_local;  // 1/fm^4
                 double Wxx   = 0.0;
@@ -625,13 +629,14 @@ void Cell_info::OutputEvolutionDataXYEta_photon(SCGrid &arena, double tau) {
                 // only ouput fluid cells that are above cut-off temperature
 
                 double rhob_local = arena(ix, iy, ieta).rhob;  // 1/fm^3
-
+                double proper_tau = arena(ix, iy, ieta).proper_tau; // fm
+		
                 double ux   = arena(ix, iy, ieta).u[1];
                 double uy   = arena(ix, iy, ieta).u[2];
                 double ueta = arena(ix, iy, ieta).u[3];
 
                 // T_local is in 1/fm
-                double T_local = eos.get_temperature(e_local, rhob_local);
+                double T_local = eos.get_temperature(e_local, rhob_local, proper_tau);
 
 
                 //if (T_local*hbarc < DATA->output_evolution_T_cut) continue;
@@ -639,7 +644,7 @@ void Cell_info::OutputEvolutionDataXYEta_photon(SCGrid &arena, double tau) {
 
                 double muB_local = 0.0;
                 if (DATA.turn_on_rhob == 1)
-                    muB_local = eos.get_muB(e_local, rhob_local);
+		    muB_local = eos.get_muB(e_local, rhob_local, proper_tau);
 
                 //double p_local = eos.get_pressure(e_local, rhob_local);
                 //double div_factor = e_local + p_local;  // 1/fm^4
@@ -727,9 +732,10 @@ double Cell_info::get_maximum_energy_density(SCGrid &arena) {
     for (int iy = 0; iy < ny; iy++) {
         const auto eps_local  = arena(ix, iy, ieta).epsilon;
         const auto rhob_local = arena(ix, iy, ieta).rhob;
+	const auto proper_tau = arena(ix, iy, ieta).proper_tau;
         eps_max  = std::max(eps_max,  eps_local );
         rhob_max = std::max(rhob_max, rhob_local);
-        T_max    = std::max(T_max,    eos.get_temperature(eps_local, rhob_local) );
+        T_max    = std::max(T_max,    eos.get_temperature(eps_local, rhob_local, proper_tau) );
     }
     eps_max *= 0.19733;   // GeV/fm^3
     T_max *= 0.19733;     // GeV
@@ -779,7 +785,8 @@ void Cell_info::check_conservation_law(SCGrid &arena, SCGrid &arena_prev,
         N_B += (c.rhob*c.u[0] + c_prev.Wmunu[10]);
         const double e_local   = c.epsilon;
         const double rhob      = c.rhob;
-        const double pressure  = eos.get_pressure(e_local, rhob);
+	const double proper_tau = c.proper_tau;
+        const double pressure  = eos.get_pressure(e_local, rhob, proper_tau);
         const double u0        = c.u[0];
         const double u1        = c.u[1];
         const double u2        = c.u[2];
@@ -862,8 +869,8 @@ void Cell_info::Gubser_flow_check_file(SCGrid &arena, double tau) {
         double pizz_sum  = 0.0;
         for (int i = 0; i < arena.nX(); i++) {
             double e_local = arena(i,i,0).epsilon;
-            double T_local = (
-                    eos.get_temperature(e_local, 0.0)*unit_convert);
+	    double proper_tau = arena(i,i,0).proper_tau;
+            double T_local = (eos.get_temperature(e_local, 0.0, proper_tau)*unit_convert);
             T_diff += fabs(T_analytic[i] - T_local);
             T_sum += fabs(T_analytic[i]);
             ux_diff += fabs(ux_analytic[i] - arena(i,i,0).u[1]);
@@ -907,7 +914,8 @@ void Cell_info::Gubser_flow_check_file(SCGrid &arena, double tau) {
         double y_local = y_min + iy*dy;
         double e_local = arena(ix,iy,0).epsilon;
         double rhob_local = arena(ix,iy,0).rhob;
-        double T_local = eos.get_temperature(e_local, 0.0);
+	double proper_tau = arena(ix,iy,0).proper_tau;
+        double T_local = eos.get_temperature(e_local, 0.0, proper_tau);
         output_file << scientific << setprecision(8) << setw(18)
                     << x_local << "  " << y_local << "  "
                     << e_local*unit_convert << "  " << rhob_local << "  "
@@ -1002,14 +1010,15 @@ void Cell_info::output_evolution_for_movie(SCGrid &arena, double tau) {
             for (int ix = 0; ix < arena.nX(); ix += n_skip_x) {
                 double e_local = arena(ix, iy, ieta).epsilon;  // 1/fm^4
                 double rhob_local = arena(ix, iy, ieta).rhob;  // 1/fm^3
+		double proper_tau = arena(ix, iy, ieta).proper_tau; // fm
 
                 // T_local is in 1/fm
-                double T_local   = eos.get_temperature(e_local, rhob_local);
+                double T_local   = eos.get_temperature(e_local, rhob_local, proper_tau);
                 if (T_local*hbarc < DATA.output_evolution_T_cut) continue;
 
-                double muB_local = eos.get_muB(e_local, rhob_local);  // 1/fm
+                double muB_local = eos.get_muB(e_local, rhob_local, proper_tau);  // 1/fm
 
-                double pressure  = eos.get_pressure(e_local, rhob_local);
+                double pressure  = eos.get_pressure(e_local, rhob_local, proper_tau);
                 double u0        = arena(ix, iy, ieta).u[0];
                 double u1        = arena(ix, iy, ieta).u[1];
                 double u2        = arena(ix, iy, ieta).u[2];
@@ -1286,11 +1295,12 @@ void Cell_info::output_average_phase_diagram_trajectory(
                 if (e_local > 0.16/hbarc)
                     V4 += unit_volume;
                 double rhob_local   = arena(ix, iy, ieta).rhob;     // 1/fm^3
+		double proper_tau   = arena(ix, iy, ieta).proper_tau; // fm
                 double utau         = arena(ix, iy, ieta).u[0];
                 double ueta         = arena(ix, iy, ieta).u[3];
                 double ut           = utau*cosh_eta + ueta*sinh_eta;  // gamma factor
-                double T_local      = eos.get_temperature(e_local, rhob_local);
-                double muB_local    = eos.get_muB(e_local, rhob_local);
+                double T_local      = eos.get_temperature(e_local, rhob_local, proper_tau);
+                double muB_local    = eos.get_muB(e_local, rhob_local, proper_tau);
                 double weight_local = e_local*ut;
                 avg_T  += T_local*weight_local;
                 avg_mu += muB_local*weight_local;
@@ -1395,8 +1405,9 @@ void Cell_info::output_momentum_anisotropy_vs_tau(
 
                 double e_local      = arena(ix, iy, ieta).epsilon;  // 1/fm^4
                 double rhob_local   = arena(ix, iy, ieta).rhob;     // 1/fm^3
-                double P_local      = eos.get_pressure(e_local, rhob_local);
-                double T_local      = eos.get_temperature(e_local, rhob_local);
+		double proper_tau   = arena(ix, iy, ieta).proper_tau; // fm
+                double P_local      = eos.get_pressure(e_local, rhob_local, proper_tau);
+                double T_local      = eos.get_temperature(e_local, rhob_local, proper_tau);
                 double gamma_perp   = arena(ix, iy, ieta).u[0];
                 double ux           = arena(ix, iy, ieta).u[1];
                 double uy           = arena(ix, iy, ieta).u[2];
