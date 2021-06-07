@@ -108,13 +108,14 @@ double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const 
     double T_upper = T_max;
     double T_mid  = (T_upper + T_lower)/2.;
     double e_lower   = get_T2e(T_lower, rhob, proper_tau);
-    double e_upper   = get_T2e(T_upper, rhob, proper_tau);
+    double e_upper   = 10*get_T2e(T_upper, rhob, proper_tau);
     int ntol         = 1000;
+    
     if (e_goal < 0.0 || e_goal > e_upper) {
-        std::cout << "get_temperature:: e is out of bounds, "
-                  << "e = " << e << ", e_upper = " << e_upper*Util::hbarc
-                  << ", e_lower = " << e_lower*Util::hbarc << " " << get_eps_max()*Util::hbarc << " " << T_max*Util::hbarc << std::endl;
-        exit(1);
+       std::cout << "get_temperature:: e is out of bounds, "
+                 << "e = " << e << ", e_upper = " << e_upper*Util::hbarc
+                 << ", e_lower = " << e_lower*Util::hbarc << " " << get_eps_max()*Util::hbarc << " " << T_max*Util::hbarc << std::endl;
+       exit(1);
     }
     
     if (e_goal < e_lower) return(T_lower);
@@ -174,7 +175,7 @@ double EOS_PCE::get_T2e(double T, double rhob, double proper_tau) const {
 
 double EOS_PCE::get_fugacity(double proper_tau) const {
     double fugacity;
-    double tau0 = 0.1;
+    double tau0 = 0;
     double tau_eq = 5.0;
     if (tau0 <= 0) {
         fugacity = 1;

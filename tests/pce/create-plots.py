@@ -142,7 +142,8 @@ newOSUtvals = newOSUtvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 """ 2D scatter plot of temperature (tempvals) over space and time: """
 plt.ylabel(r'$\tau$ (fm/c)')
 plt.xlabel(r'$x$ (fm)')
-plt.scatter(rvals, tvals, c = tempvals, cmap=plt.cm.jet, vmin = 0, vmax = 400)
+plt.scatter(rvals, tvals, c=tempvals, cmap=plt.cm.jet, vmin=0, vmax=400)
+#plt.scatter(OSUrvals[::50], OSUtvals[::50], c = OSUtempvals[::50], cmap=plt.cm.jet, vmin = 0, vmax = 400)
 plt.colorbar(label=r'$T$ (MeV)', extend='both')
 #plt.scatter(newxvals, newTpropvals, c='b', label = 'MUSIC',s=1)
 #plt.scatter(np.sort(newOSUxvals), newOSUTpropvals[newOSUxvals.argsort()], c='r', label = 'OSU-hydro',s=1) 
@@ -158,9 +159,9 @@ t = np.linspace(0, 10, 50)
 plt.title(r'$T_{eq} = 5 fm/c$')
 
 
-temp = griddata((rvals,tvals),tempvals,(r[None,:],t[:,None]),method='nearest')
-cs = plt.contour(r, t, temp, levels=[155., 200., 270., 350.], colors='k', linewidths = 0.5, extend='both')
-plt.clabel(cs, inline=0, fontsize=10)
+# temp = griddata((rvals,tvals),tempvals,(r[None,:],t[:,None]),method='nearest')
+# cs = plt.contour(r, t, temp, levels=[155., 200., 270., 350.], colors='k', linewidths = 0.5, extend='both')
+# plt.clabel(cs, inline=0, fontsize=10)
 
 
 """ 2D scatter plot of fugacity (fugvals) over space and time: """
