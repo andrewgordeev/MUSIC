@@ -299,7 +299,7 @@ void Advance::UpdateTJbRK(const ReconstCell &grid_rk, Cell_small &grid_pt) {
     grid_pt.epsilon = grid_rk.e;
     grid_pt.rhob    = grid_rk.rhob;
     grid_pt.u       = grid_rk.u;
-    grid_pt.proper_tau += 2*DATA.delta_tau/grid_pt.u[0];
+    grid_pt.proper_tau += 2*DATA.delta_tau/abs(grid_pt.u[0]);
 }/* UpdateTJbRK */
 
 
