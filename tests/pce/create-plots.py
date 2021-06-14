@@ -10,13 +10,14 @@ tvals = np.array([])
 xvals = np.array([])
 yvals = np.array([])
 tempvals = np.array([])
+evals = np.array([])
 vvals = np.array([])
 Tpropvals = np.array([])
 
 xmax = 15.0
 ymax = 15.0
 t0 = 0.4
-tmax = t0+1.0
+tmax = t0+5.0
 dx = 0.1*5
 dy = 0.1*5
 dt = 0.025*5
@@ -32,23 +33,24 @@ with open(results_file, 'r') as f:
                 xvals = np.append(xvals, x)
                 yvals = np.append(yvals, y)
                 tempvals = np.append(tempvals, 1000*float(line.split()[0]))
-                vvals = np.append(vvals, np.sqrt(float(line.split()[2])**2 + float(line.split()[3])**2))
-                Tpropvals = np.append(Tpropvals, float(line.split()[5]))
+                evals = np.append(evals, float(line.split()[1]))
+                vvals = np.append(vvals, np.sqrt(float(line.split()[3])**2 + float(line.split()[4])**2))
+                Tpropvals = np.append(Tpropvals, float(line.split()[6]))
     f.close()
     
 rvals = np.sqrt(xvals**2 + yvals**2)
 
 """ Comparing to OSU-hydro data """
 
-surface = np.fromfile('../../../osu-hydro-pce/test/surface.dat', dtype='f8').reshape(-1, 7)
+surface = np.fromfile('../../../osu-hydro-pce/test/surface.dat', dtype='f8').reshape(-1, 8)
 
 OSUresults = dict(
     zip(['x','v'], np.hsplit(surface, [3,5])),
     #pi=dict(zip(['xx','xy','yy'],surface.T[11:14])),
     #Pi=surface.T[15],
     Temp = surface.T[5],
-    #ed = surface.T[17],
-    Tprop=surface.T[6])#,
+    ed = surface.T[6],
+    Tprop=surface.T[7])#,
    # sd = surface.T[19],
    # intersect = surface.T[20])
 
@@ -57,8 +59,7 @@ OSUxvals = OSUresults['x'][:,1]
 OSUyvals = OSUresults['x'][:,2]
 OSUrvals = np.sqrt(OSUxvals**2 + OSUyvals**2)
 OSUtempvals = 1000*OSUresults['Temp']
-#evals = results['ed']
-#intersect = results["intersect"]
+OSUevals = OSUresults['ed']
 OSUTpropvals = OSUresults['Tprop']
 OSUvvals = np.sqrt((OSUresults['v']**2).sum(axis=1))
 
@@ -116,10 +117,12 @@ newyvals = yvals[abs(yvals-ytarget)<grid_step]
 newxvals = xvals[abs(yvals-ytarget)<grid_step]
 newtvals = tvals[abs(yvals-ytarget)<grid_step]
 newtempvals = tempvals[abs(yvals-ytarget)<grid_step]
+newevals = evals[abs(yvals-ytarget)<grid_step]
 newvvals = vvals[abs(yvals-ytarget)<grid_step]
 newTpropvals = Tpropvals[abs(yvals-ytarget)<grid_step]
 
 newtempvals = newtempvals[abs(newtvals-ttarget)<grid_step*step_fraction]
+newevals = newevals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newTpropvals = newTpropvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newvvals = newvvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newxvals = newxvals[abs(newtvals-ttarget)<grid_step*step_fraction]
@@ -129,10 +132,12 @@ newOSUyvals = OSUyvals[abs(OSUyvals-ytarget)<grid_step]
 newOSUxvals = OSUxvals[abs(OSUyvals-ytarget)<grid_step]
 newOSUtvals = OSUtvals[abs(OSUyvals-ytarget)<grid_step]
 newOSUtempvals = OSUtempvals[abs(OSUyvals-ytarget)<grid_step]
+newOSUevals = OSUevals[abs(OSUyvals-ytarget)<grid_step]
 newOSUvvals = OSUvvals[abs(OSUyvals-ytarget)<grid_step]
 newOSUTpropvals = OSUTpropvals[abs(OSUyvals-ytarget)<grid_step]
 
 newOSUtempvals = newOSUtempvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
+newOSUevals = newOSUevals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUTpropvals = newOSUTpropvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUvvals = newOSUvvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUxvals = newOSUxvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
@@ -153,13 +158,12 @@ plt.colorbar(label=r'$T$ (MeV)', extend='both')
 # plt.plot(mathematica_data[:,0],mathematica_data[:,1], c='g', label = 'Mathematica')
 # plt.plot(-mathematica_data[:,0],mathematica_data[:,1], c='g')
 plt.legend()
-
+plt.title(r'$T_{eq} = 5 fm/c$')
 
 
 """ Plotting contours """
 r = np.linspace(0, 15, 50)
 t = np.linspace(0, 10, 50)
-plt.title(r'$T_{eq} = 5 fm/c$')
 
 
 # temp = griddata((rvals,tvals),tempvals,(r[None,:],t[:,None]),method='nearest')
