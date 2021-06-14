@@ -15,8 +15,8 @@ Tpropvals = np.array([])
 
 xmax = 15.0
 ymax = 15.0
-t0 = 0.1
-tmax = 10.1
+t0 = 0.4
+tmax = t0+1.0
 dx = 0.1*5
 dy = 0.1*5
 dt = 0.025*5
@@ -149,6 +149,9 @@ plt.colorbar(label=r'$T$ (MeV)', extend='both')
 #plt.scatter(np.sort(newOSUxvals), newOSUTpropvals[newOSUxvals.argsort()], c='r', label = 'OSU-hydro',s=1) 
 #profile = np.load('../../../osu-hydro-pce/test/profiles/profilex15n65p0grid300central20.npy')
 #plt.plot(np.linspace(-15,15,300),profile[150,:],c='g', label='TRENTO average')
+# mathematica_data = np.fromfile('../../../ideal_hydro_cylindrical/mathematica_plot.dat').reshape(-1,2)
+# plt.plot(mathematica_data[:,0],mathematica_data[:,1], c='g', label = 'Mathematica')
+# plt.plot(-mathematica_data[:,0],mathematica_data[:,1], c='g')
 plt.legend()
 
 
