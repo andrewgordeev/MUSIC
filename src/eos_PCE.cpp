@@ -99,12 +99,16 @@ double EOS_PCE::p_e_func(double e, double rhob, double proper_tau) const {
 //! input local energy density eps [1/fm^4] and rhob [1/fm^3]
 double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const {
     double T_QCD;
-    if (e < 0.08445) {  // This corresponds to T < 0.1 GeV
-      T_QCD = 0.000000420545102 * std::pow(log(e*Util::hbarc),4) + 0.0000450280810 * std::pow(log(e*Util::hbarc),3) + 0.001735044 * std::pow(log(e*Util::hbarc),2) + 0.0290356967 * log(e*Util::hbarc) + .192138240;
+    if (e < 0.1) {  // This corresponds to T < ~0.1 GeV
+        T_QCD = (0.18175818963347465 * std::pow(e*Util::hbarc, 0.1433156325035367))/Util::hbarc;
     }
     else T_QCD = interpolate1D(e, 0, temperature_tb);  // 1/fm
     // double T_QCD = interpolate1D(e, 0, temperature_tb);  // 1/fm
-    double T_gluon = interpolate1D(e, 1, temperature_tb);
+    double T_gluon;
+    if (e < 0.1) {  // This corresponds to T < ~0.2 GeV
+        T_gluon = (0.545827055067574 * std::pow(e*Util::hbarc, 0.2237373605050102))/Util::hbarc;
+    }
+    else T_gluon = interpolate1D(e, 1, temperature_tb);
     double fugacity = get_fugacity(proper_tau);
     double T = fugacity * T_QCD + (1 - fugacity) * T_gluon;
     return(std::max(1e-15, T));
@@ -138,7 +142,7 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
     double tau0 = 0.0;
     double tau_eq = 5.0;
     if (tau0 <= 0 or tau_eq <= 0) {
-        fugacity = 1;
+        fugacity = 0;
     }
     else {
         fugacity = 1 - exp((tau0 - proper_tau)/tau_eq);
@@ -149,12 +153,13 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
 double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
   // double T = get_temperature(e, rhob, proper_tau);
     double cs2_QCD;
-    if (e < 0.08445) {  // This corresponds to T < 0.1 GeV
-        double T = interpolate1D(e, 0, temperature_tb)*Util::hbarc;
-        cs2_QCD = std::max(285.383289 * std::pow(T,3) - 91.6171247 * std::pow(T,2) + 8.44067621 * T - 0.00689668358, 1e-10); // Cubic fit for low temp cs2
+    //   if (e < 0.08445) {  // This corresponds to T < 0.1 GeV
+    //    double T = interpolate1D(e, 0, temperature_tb)*Util::hbarc;
+    ///    cs2_QCD = std::max(285.383289 * std::pow(T,3) - 91.6171247 * std::pow(T,2) + 8.44067621 * T - 0.00689668358, 1e-10); // Cubic fit for low temp cs2
 	//  	std::cout << "cs2 debug: " << e << " " << T << " " << cs2_QCD << std::endl;
-    }
-    else cs2_QCD = interpolate1D(e, 0, cs2_tb);  // 1/fm
+    //}
+    //else
+    cs2_QCD = interpolate1D(e, 0, cs2_tb);  // 1/fm
     double cs2_gluon = interpolate1D(e, 1, cs2_tb);
     double fugacity = get_fugacity(proper_tau);
     double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
