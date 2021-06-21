@@ -111,6 +111,8 @@ double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const 
     else T_gluon = interpolate1D(e, 1, temperature_tb);
     double fugacity = get_fugacity(proper_tau);
     double T = fugacity * T_QCD + (1 - fugacity) * T_gluon;
+
+    T = (.15274608127810668 * std::pow(e*Util::hbarc, .2478330589996049))/Util::hbarc;
     return(std::max(1e-15, T));
 }
 
@@ -123,6 +125,8 @@ double EOS_PCE::get_pressure(double e, double rhob, double proper_tau) const {
     double f_gluon = interpolate1D(e, 1, pressure_tb);
     double fugacity = get_fugacity(proper_tau);
     double f = fugacity * f_QCD + (1 - fugacity) * f_gluon;
+
+    f = (-.0000000775447 * std::pow(e*Util::hbarc,0.247833) + 0.329492 * e*Util::hbarc)/Util::hbarc;
     return(std::max(1e-15, f));
 }
 
@@ -142,7 +146,7 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
     double tau0 = 0.0;
     double tau_eq = 5.0;
     if (tau0 <= 0 or tau_eq <= 0) {
-        fugacity = 0;
+        fugacity = 1;
     }
     else {
         fugacity = 1 - exp((tau0 - proper_tau)/tau_eq);
@@ -163,5 +167,8 @@ double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
     double cs2_gluon = interpolate1D(e, 1, cs2_tb);
     double fugacity = get_fugacity(proper_tau);
     double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
+    double T = interpolate1D(e,0,temperature_tb)*Util::hbarc;
+    if (T < 0.18410179) cs2 = 246.0490286078087 * std::pow(T,3) - 83.01937867454492 * std::pow(T,2) + 7.936821067345355 * T - 0.00025794218162239854;
+    else cs2 = 1/3. - 0.008183471854138312/(T - 0.12997412301945538);
     return(std::max(1e-15, cs2));
 }
