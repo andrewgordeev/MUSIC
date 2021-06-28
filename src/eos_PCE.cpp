@@ -158,13 +158,12 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
 double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
   // double T = get_temperature(e, rhob, proper_tau);
     double cs2_QCD;
-    //   if (e < 0.08445) {  // This corresponds to T < 0.1 GeV
-    //    double T = interpolate1D(e, 0, temperature_tb)*Util::hbarc;
-    ///    cs2_QCD = std::max(285.383289 * std::pow(T,3) - 91.6171247 * std::pow(T,2) + 8.44067621 * T - 0.00689668358, 1e-10); // Cubic fit for low temp cs2
+    if (e < 4) {  // This corresponds to T < 0.270 GeV
+        double T = interpolate1D(e, 0, temperature_tb)*Util::hbarc;
+        cs2_QCD = std::max(-14.674721746160193 * std::pow(T,2) + 4.01769407771253 * T + 0.00568411270166867, 1e-10); // Quadratic fit for low temp cs2
 	//  	std::cout << "cs2 debug: " << e << " " << T << " " << cs2_QCD << std::endl;
-    //}
-    //else
-    cs2_QCD = interpolate1D(std::pow(e,0.25), 0, cs2_tb);  // 1/fm
+    }
+    else cs2_QCD = interpolate1D(std::pow(e,0.25), 0, cs2_tb);  // 1/fm
     double cs2_gluon = interpolate1D(std::pow(e,0.25), 1, cs2_tb);
     double fugacity = get_fugacity(proper_tau);
     double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
