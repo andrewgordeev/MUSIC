@@ -64,8 +64,8 @@ X_grid_size_in_fm 30.0
 Y_grid_size_in_fm 30.0
                               # transverse plane 
                               # [-Y_grid_size_in_fm/2, Y_grid_size_in_fm/2]
-Grid_size_in_y 300
-Grid_size_in_x 300
+Grid_size_in_y 500
+Grid_size_in_x 500
 #
 #
 EOS_to_use 18                  # type of the equation of state
@@ -83,7 +83,7 @@ EOS_to_use 18                  # type of the equation of state
                               # 6: lattice EOS s95p at 165 MeV
                               # 7: lattice EOS s95p-v1.2 for UrQMD
                               # 18: interpolated PCE EOS
-Minmod_Theta 1.8
+Minmod_Theta 1.6
 
 # transport coefficients
 Viscosity_Flag_Yes_1_No_0 0        # turn on viscosity in the evolution

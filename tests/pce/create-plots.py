@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
  
-results_file = '../../evolution_xyeta.dat'
+results_file = '../../evolution_xyeta2000.dat'
 
 tvals = np.array([])
 xvals = np.array([])
@@ -18,8 +18,8 @@ xmax = 15.0
 ymax = 15.0
 t0 = 0.4
 tmax = t0+5.0
-dx = 0.1*5
-dy = 0.1*5
+dx = 0.06*5
+dy = 0.06*5
 dt = 0.025*5
 
 

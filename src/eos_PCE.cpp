@@ -42,7 +42,7 @@ void EOS_PCE::initialize_eos() {
     cs2_tb         = new double** [ntables];
 
     std::ifstream qcd_eos(path + "/hrg_hotqcd_eos_binary.dat", std::ios::binary);
-    std::ifstream gluon_eos(path + "/gluon_eos_binary.dat", std::ios::binary);
+    std::ifstream gluon_eos(path + "/gluon_eos_binary_e0p25spacingAlt.dat", std::ios::binary);
     
     for (int itable = 0; itable < ntables; itable++) { // 0 = QCD, 1 = gluon
         std::ifstream* eos_file;
@@ -158,13 +158,15 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
 double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
   // double T = get_temperature(e, rhob, proper_tau);
     double cs2_QCD;
-    if (e < 4) {  // This corresponds to T < 0.270 GeV
-        double T = interpolate1D(e, 0, temperature_tb)*Util::hbarc;
-        cs2_QCD = std::max(-14.674721746160193 * std::pow(T,2) + 4.01769407771253 * T + 0.00568411270166867, 1e-10); // Quadratic fit for low temp cs2
+    double cs2_gluon;
+    //if (e < 3.9107784705957664) {  // This corresponds to T < 0.270 GeV
+    //    double T = interpolate1D(e, 1, temperature_tb)*Util::hbarc;
+    //    cs2_gluon = std::max(-14.674721746160193 * std::pow(T,2) + 4.01769407771253 * T + 0.00568411270166867, 1e-10); // Quadratic fit for low temp cs2
 	//  	std::cout << "cs2 debug: " << e << " " << T << " " << cs2_QCD << std::endl;
-    }
-    else cs2_QCD = interpolate1D(std::pow(e,0.25), 0, cs2_tb);  // 1/fm
-    double cs2_gluon = interpolate1D(std::pow(e,0.25), 1, cs2_tb);
+    //}
+    cs2_gluon = interpolate1D(std::pow(e,0.25), 1, cs2_tb);  // 1/fm
+    cs2_QCD = interpolate1D(std::pow(e,0.25), 0, cs2_tb);
+    //double cs2_gluon = interpolate1D(std::pow(e,0.25), 1, cs2_tb);
     double fugacity = get_fugacity(proper_tau);
     double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
     //double T = interpolate1D(e,0,temperature_tb)*Util::hbarc;
