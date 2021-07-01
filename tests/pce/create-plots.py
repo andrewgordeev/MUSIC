@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
  
-results_file = '../../evolution_xyeta2000.dat'
+results_file = '../../evolution_xyeta.dat'
 
 tvals = np.array([])
 xvals = np.array([])
