@@ -222,8 +222,8 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
 
                 // exclude the actual coordinates from the output to save space:
                 if (DATA.outputBinaryEvolution == 0) {
-                    fprintf(out_file_xyeta, "%e %e %e %e %e %e %e\n",
-                            T_local*hbarc, e_local*hbarc, muB_local*hbarc, vx, vy, vz, proper_tau);
+                    fprintf(out_file_xyeta, "%e %e %e %e %e %e %e %e\n",
+                            T_local*hbarc, e_local*hbarc, muB_local*hbarc, vx, vy, vz, proper_tau, p_local*hbarc);
                     if (DATA.viscosity_flag == 1) {
                         if (DATA.turn_on_shear) {
                             fprintf(out_file_W_xyeta,

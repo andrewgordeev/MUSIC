@@ -13,11 +13,12 @@ tempvals = np.array([])
 evals = np.array([])
 vvals = np.array([])
 Tpropvals = np.array([])
+pvals = np.array([])
 
 xmax = 15.0
 ymax = 15.0
 t0 = 0.4
-tmax = t0+5.0
+tmax = t0+1.0
 dx = 0.06*5
 dy = 0.06*5
 dt = 0.025*5
@@ -36,6 +37,7 @@ with open(results_file, 'r') as f:
                 evals = np.append(evals, float(line.split()[1]))
                 vvals = np.append(vvals, np.sqrt(float(line.split()[3])**2 + float(line.split()[4])**2))
                 Tpropvals = np.append(Tpropvals, float(line.split()[6]))
+                pvals = np.append(pvals, float(line.split()[7]))
     f.close()
     
 rvals = np.sqrt(xvals**2 + yvals**2)
@@ -62,6 +64,7 @@ OSUtempvals = 1000*OSUresults['Temp']
 OSUevals = OSUresults['ed']
 OSUTpropvals = OSUresults['Tprop']
 OSUvvals = np.sqrt((OSUresults['v']**2).sum(axis=1))
+OSUpvals = OSUevals # Placeholder!
 
 plt.rcdefaults()
 plt.style.use(['seaborn-darkgrid', 'seaborn-deep', 'seaborn-notebook'])
@@ -120,10 +123,12 @@ newtempvals = tempvals[abs(yvals-ytarget)<grid_step]
 newevals = evals[abs(yvals-ytarget)<grid_step]
 newvvals = vvals[abs(yvals-ytarget)<grid_step]
 newTpropvals = Tpropvals[abs(yvals-ytarget)<grid_step]
+newpvals = pvals[abs(yvals-ytarget)<grid_step]
 
 newtempvals = newtempvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newevals = newevals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newTpropvals = newTpropvals[abs(newtvals-ttarget)<grid_step*step_fraction]
+newpvals = newpvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newvvals = newvvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newxvals = newxvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newtvals = newtvals[abs(newtvals-ttarget)<grid_step*step_fraction]
@@ -135,10 +140,12 @@ newOSUtempvals = OSUtempvals[abs(OSUyvals-ytarget)<grid_step]
 newOSUevals = OSUevals[abs(OSUyvals-ytarget)<grid_step]
 newOSUvvals = OSUvvals[abs(OSUyvals-ytarget)<grid_step]
 newOSUTpropvals = OSUTpropvals[abs(OSUyvals-ytarget)<grid_step]
+newOSUpvals = OSUpvals[abs(OSUyvals-ytarget)<grid_step]
 
 newOSUtempvals = newOSUtempvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUevals = newOSUevals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUTpropvals = newOSUTpropvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
+newOSUpvals = newOSUpvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUvvals = newOSUvvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUxvals = newOSUxvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
 newOSUtvals = newOSUtvals[abs(newOSUtvals-ttarget)<grid_step*step_fraction]
