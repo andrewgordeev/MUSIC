@@ -14,18 +14,23 @@ evals = np.array([])
 vvals = np.array([])
 Tpropvals = np.array([])
 pvals = np.array([])
+vxvals = np.array([])
+vyvals = np.array([])
+vzvals = np.array([])
 
 xmax = 15.0
 ymax = 15.0
 t0 = 0.4
-tmax = t0+1.0
+tmax = t0+0.025
 dx = 0.06*5
 dy = 0.06*5
-dt = 0.025*5
+dt = 0.025*1
 
 
 with open(results_file, 'r') as f:
     for t in np.arange(t0, tmax+dt, dt):
+        if t > tmax:
+            break
         print(t)
         for y in np.arange(-ymax, ymax, dy):
             for x in np.arange(-xmax, xmax, dx):
@@ -35,6 +40,9 @@ with open(results_file, 'r') as f:
                 yvals = np.append(yvals, y)
                 tempvals = np.append(tempvals, 1000*float(line.split()[0]))
                 evals = np.append(evals, float(line.split()[1]))
+                vxvals = np.append(vxvals, float(line.split()[3]))
+                vyvals = np.append(vyvals, float(line.split()[4]))
+                vzvals = np.append(vzvals, float(line.split()[5]))
                 vvals = np.append(vvals, np.sqrt(float(line.split()[3])**2 + float(line.split()[4])**2))
                 Tpropvals = np.append(Tpropvals, float(line.split()[6]))
                 pvals = np.append(pvals, float(line.split()[7]))
@@ -122,6 +130,9 @@ newtvals = tvals[abs(yvals-ytarget)<grid_step]
 newtempvals = tempvals[abs(yvals-ytarget)<grid_step]
 newevals = evals[abs(yvals-ytarget)<grid_step]
 newvvals = vvals[abs(yvals-ytarget)<grid_step]
+newvxvals = vxvals[abs(yvals-ytarget)<grid_step]
+newvyvals = vyvals[abs(yvals-ytarget)<grid_step]
+newvzvals = vzvals[abs(yvals-ytarget)<grid_step]
 newTpropvals = Tpropvals[abs(yvals-ytarget)<grid_step]
 newpvals = pvals[abs(yvals-ytarget)<grid_step]
 
@@ -130,6 +141,9 @@ newevals = newevals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newTpropvals = newTpropvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newpvals = newpvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newvvals = newvvals[abs(newtvals-ttarget)<grid_step*step_fraction]
+newvxvals = newvxvals[abs(newtvals-ttarget)<grid_step*step_fraction]
+newvyvals = newvyvals[abs(newtvals-ttarget)<grid_step*step_fraction]
+newvzvals = newvzvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newxvals = newxvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newtvals = newtvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 

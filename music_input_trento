@@ -45,7 +45,7 @@ boost_invariant  1            # whether the simulation is boost-invariant
 # grid information
 Initial_time_tau_0 0.4        # starting time of the hydrodynamic 
                               # evolution (fm/c)
-Total_evolution_time_tau 2.  # the maximum allowed running 
+Total_evolution_time_tau 0.025  # the maximum allowed running 
                               # evolution time (fm/c)
                               # need to be set to some large number
 Delta_Tau 0.025               # time step to use in the evolution [fm/c]
@@ -64,8 +64,8 @@ X_grid_size_in_fm 30.0
 Y_grid_size_in_fm 30.0
                               # transverse plane 
                               # [-Y_grid_size_in_fm/2, Y_grid_size_in_fm/2]
-Grid_size_in_y 500
-Grid_size_in_x 500
+Grid_size_in_y 100
+Grid_size_in_x 100
 #
 #
 EOS_to_use 18                  # type of the equation of state
@@ -84,7 +84,7 @@ EOS_to_use 18                  # type of the equation of state
                               # 7: lattice EOS s95p-v1.2 for UrQMD
                               # 18: interpolated PCE EOS
 Minmod_Theta 1.6
-Runge_Kutta_order 2
+Runge_Kutta_order 1
 
 # transport coefficients
 Viscosity_Flag_Yes_1_No_0 0        # turn on viscosity in the evolution
@@ -104,9 +104,9 @@ output_movie_flag 0
 output_evolution_T_cut 0.00001
 outputBinaryEvolution  0           # output evolution file in binary format
 output_evolution_every_N_eta  1    # output evolution file every Neta steps
-output_evolution_every_N_y  5      # output evolution file every Ny steps
-output_evolution_every_N_x  5      # output evolution file every Nx steps
-output_evolution_every_N_timesteps  5  # output evolution every Ntime steps
+output_evolution_every_N_y  1      # output evolution file every Ny steps
+output_evolution_every_N_x  1      # output evolution file every Nx steps
+output_evolution_every_N_timesteps  1  # output evolution every Ntime steps
 #
 #
 ###########################################
