@@ -42,19 +42,19 @@ class Reconst {
                                   const TJbVec &q, const Cell_small &grid_pt);
     
     void reconst_velocity_fdf(const double v, const double T00, const double M,
-                              const double J0, const double proper_tau, double &fv, double &dfdv) const;
+                              const double J0, double &fv, double &dfdv) const;
 
     void reconst_u0_fdf(const double u0, const double T00, const double K00,
                         const double M, const double J0,
-                        const double proper_tau, double &fu0, double &dfdu0) const;
+                        double &fu0, double &dfdu0) const;
 
     int solve_velocity_Newton(const double v_guess, const double T00,
                               const double M, const double J0,
-                              const double proper_tau, double &v_solution);
+                              double &v_solution);
 
     int solve_u0_Newton(const double u0_guess, const double T00,
                         const double K00, const double M, const double J0,
-                        const double proper_tau, double &u0_solution);
+                        double &u0_solution);
 
     void regulate_grid(ReconstCell &grid_cell, double elocal) const;
 };

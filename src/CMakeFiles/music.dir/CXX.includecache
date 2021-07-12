@@ -6,12 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-data_struct.h
-/home/andrew/Documents/Work/music-hydro/src/data_struct.h
-array
--
-
 /home/andrew/Documents/Work/music-hydro/src/data.h
 array
 -
@@ -26,29 +20,9 @@ string
 array
 -
 
-/home/andrew/Documents/Work/music-hydro/src/eos.h
-eos_base.h
-/home/andrew/Documents/Work/music-hydro/src/eos_base.h
-memory
--
-
-/home/andrew/Documents/Work/music-hydro/src/eos_base.h
-pretty_ostream.h
-/home/andrew/Documents/Work/music-hydro/src/pretty_ostream.h
+/home/andrew/Documents/Work/music-hydro/src/emoji.h
 string
 -
-vector
--
-
-/home/andrew/Documents/Work/music-hydro/src/grid.h
-cassert
--
-vector
--
-cell.h
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-grid.h
-/home/andrew/Documents/Work/music-hydro/src/grid.h
 
 /home/andrew/Documents/Work/music-hydro/src/pretty_ostream.h
 iostream
@@ -58,43 +32,25 @@ sstream
 cstring
 -
 
-/home/andrew/Documents/Work/music-hydro/src/reconst.cpp
+/home/andrew/Documents/Work/music-hydro/src/read_in_parameters.cpp
 iostream
 -
-algorithm
+cstring
 -
-cmath
+./read_in_parameters.h
+/home/andrew/Documents/Work/music-hydro/src/read_in_parameters.h
+
+/home/andrew/Documents/Work/music-hydro/src/read_in_parameters.h
+string
 -
 data.h
 /home/andrew/Documents/Work/music-hydro/src/data.h
-cell.h
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-grid.h
-/home/andrew/Documents/Work/music-hydro/src/grid.h
-eos.h
-/home/andrew/Documents/Work/music-hydro/src/eos.h
-reconst.h
-/home/andrew/Documents/Work/music-hydro/src/reconst.h
-
-/home/andrew/Documents/Work/music-hydro/src/reconst.h
-array
--
-iostream
--
 util.h
 /home/andrew/Documents/Work/music-hydro/src/util.h
-data.h
-/home/andrew/Documents/Work/music-hydro/src/data.h
-cell.h
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-grid.h
-/home/andrew/Documents/Work/music-hydro/src/grid.h
-eos.h
-/home/andrew/Documents/Work/music-hydro/src/eos.h
+emoji.h
+/home/andrew/Documents/Work/music-hydro/src/emoji.h
 pretty_ostream.h
 /home/andrew/Documents/Work/music-hydro/src/pretty_ostream.h
-data_struct.h
-/home/andrew/Documents/Work/music-hydro/src/data_struct.h
 
 /home/andrew/Documents/Work/music-hydro/src/util.h
 stdio.h

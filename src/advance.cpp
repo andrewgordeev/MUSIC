@@ -299,7 +299,6 @@ void Advance::UpdateTJbRK(const ReconstCell &grid_rk, Cell_small &grid_pt) {
     grid_pt.epsilon = grid_rk.e;
     grid_pt.rhob    = grid_rk.rhob;
     grid_pt.u       = grid_rk.u;
-    grid_pt.proper_tau += 2*DATA.delta_tau/grid_pt.u[0];
 }/* UpdateTJbRK */
 
 
@@ -307,15 +306,14 @@ void Advance::UpdateTJbRK(const ReconstCell &grid_rk, Cell_small &grid_pt) {
 //! in the dilute region to stablize numerical simulations
 void Advance::QuestRevert(double tau, Cell_small *grid_pt,
                           int ieta, int ix, int iy) {
-    double eps_scale = 0.5;   // 1/fm^4
+    double eps_scale = 0.2;   // 1/fm^4
     double e_local   = grid_pt->epsilon;
     double rhob      = grid_pt->rhob;
-    double proper_tau = grid_pt->proper_tau;
 
     // regulation factor in the default MUSIC
     // double factor = 300.*tanh(grid_pt->epsilon/eps_scale);
     double xi = 0.05;
-    double factor = 100.*(1./(exp(-(e_local - eps_scale)/xi) + 1.)
+    double factor = 10.*(1./(exp(-(e_local - eps_scale)/xi) + 1.)
                           - 1./(exp(eps_scale/xi) + 1.));
     double factor_bulk = factor;
 
@@ -337,7 +335,7 @@ void Advance::QuestRevert(double tau, Cell_small *grid_pt,
     double pi_local = grid_pt->pi_b;
     double bulksize = 3.*pi_local*pi_local;
 
-    double p_local = eos.get_pressure(e_local, rhob, proper_tau);
+    double p_local = eos.get_pressure(e_local, rhob);
     double eq_size = e_local*e_local + 3.*p_local*p_local;
 
     // In default MUSIC
@@ -380,10 +378,10 @@ void Advance::QuestRevert(double tau, Cell_small *grid_pt,
 //! in the dilute region to stablize numerical simulations
 void Advance::QuestRevert_qmu(double tau, Cell_small *grid_pt,
                               int ieta, int ix, int iy) {
-    double eps_scale = 0.5;   // in 1/fm^4
+    double eps_scale = 0.2;   // in 1/fm^4
 
     double xi = 0.05;
-    double factor = 100.*(1./(exp(-(grid_pt->epsilon - eps_scale)/xi) + 1.)
+    double factor = 10.*(1./(exp(-(grid_pt->epsilon - eps_scale)/xi) + 1.)
                           - 1./(exp(eps_scale/xi) + 1.));
 
     double q_mu_local[4];
@@ -549,16 +547,15 @@ double Advance::MaxSpeed(double tau, int direc, const ReconstCell &grid_p) {
 
     double eps  = grid_p.e;
     double rhob = grid_p.rhob;
-    double proper_tau = grid_p.proper_tau;
 
-    double vs2 = eos.get_cs2(eps, rhob, proper_tau);
+    double vs2 = eos.get_cs2(eps, rhob);
     double num_temp_sqrt = (ut2mux2 - (ut2mux2 - 1.)*vs2)*vs2;
     double num;
     if (num_temp_sqrt >= 0)  {
         num = utau*ux*(1. - vs2) + sqrt(num_temp_sqrt);
     } else {
-        double dpde = eos.get_dpde(eps, rhob, proper_tau);
-        double p = eos.get_pressure(eps, rhob, proper_tau);
+        double dpde = eos.get_dpde(eps, rhob);
+        double p = eos.get_pressure(eps, rhob);
         double h = p+eps;
         if (dpde < 0.001) {
             num = (sqrt(-(h*dpde*h*(dpde*(-1.0 + ut2mux2) - ut2mux2)))
@@ -573,8 +570,8 @@ double Advance::MaxSpeed(double tau, int direc, const ReconstCell &grid_p) {
           fprintf(stderr,"at value utau=%lf. \n", utau);
           fprintf(stderr,"at value uk=%lf. \n", ux);
           fprintf(stderr,"at value vs^2=%lf. \n", vs2);
-          fprintf(stderr,"at value dpde=%lf. \n", eos.get_dpde(eps, rhob, proper_tau));
-          fprintf(stderr,"at value dpdrhob=%lf. \n", eos.get_dpdrhob(eps, rhob, proper_tau));
+          fprintf(stderr,"at value dpde=%lf. \n", eos.get_dpde(eps, rhob));
+          fprintf(stderr,"at value dpdrhob=%lf. \n", eos.get_dpdrhob(eps, rhob));
           fprintf(stderr, "MaxSpeed: exiting.\n");
           exit(1);
         }
@@ -619,7 +616,6 @@ double Advance::get_TJb(const ReconstCell &grid_p, const int rk_flag,
         return rhob*u_nu;
     }
     double e = grid_p.e;
-    double proper_tau = grid_p.proper_tau;
     double gfac = 0.0;
     double u_mu = 0.0;
     if (mu == nu) {
@@ -631,7 +627,7 @@ double Advance::get_TJb(const ReconstCell &grid_p, const int rk_flag,
     } else {
         u_mu = grid_p.u[mu];
     }
-    const double pressure = eos.get_pressure(e, rhob, proper_tau);
+    const double pressure = eos.get_pressure(e, rhob);
     const double T_munu   = (e + pressure)*u_mu*u_nu + pressure*gfac;
     return(T_munu);
 }
@@ -645,7 +641,6 @@ double Advance::get_TJb(const Cell_small &grid_p, const int mu, const int nu) {
         return rhob*u_nu;
     }
     double e = grid_p.epsilon;
-    double proper_tau = grid_p.proper_tau;
     double gfac = 0.0;
     double u_mu = 0.0;
     if (mu == nu) {
@@ -657,7 +652,7 @@ double Advance::get_TJb(const Cell_small &grid_p, const int mu, const int nu) {
     } else {
         u_mu = grid_p.u[mu];
     }
-    const double pressure = eos.get_pressure(e, rhob, proper_tau);
+    const double pressure = eos.get_pressure(e, rhob);
     const double T_munu   = (e + pressure)*u_mu*u_nu + pressure*gfac;
     return(T_munu);
 }

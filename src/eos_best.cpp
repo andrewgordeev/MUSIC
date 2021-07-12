@@ -105,19 +105,19 @@ void EOS_BEST::initialize_eos() {
 }
 
 
-double EOS_BEST::p_e_func(double e, double rhob, double proper_tau) const {
-    return(get_dpOverde3(e, rhob, proper_tau));
+double EOS_BEST::p_e_func(double e, double rhob) const {
+    return(get_dpOverde3(e, rhob));
 }
 
 
-double EOS_BEST::p_rho_func(double e, double rhob, double proper_tau) const {
-    return(get_dpOverdrhob2(e, rhob, proper_tau));
+double EOS_BEST::p_rho_func(double e, double rhob) const {
+    return(get_dpOverdrhob2(e, rhob));
 }
 
 
 //! This function returns the local temperature in [1/fm]
 //! input local energy density eps [1/fm^4] and rhob [1/fm^3]
-double EOS_BEST::get_temperature(double e, double rhob, double proper_tau) const {
+double EOS_BEST::get_temperature(double e, double rhob) const {
     int table_idx = get_table_idx(e);
     double T = interpolate2D(e, std::abs(rhob), table_idx,
                              temperature_tb);  // 1/fm
@@ -127,7 +127,7 @@ double EOS_BEST::get_temperature(double e, double rhob, double proper_tau) const
 
 //! This function returns the local pressure in [1/fm^4]
 //! the input local energy density [1/fm^4], rhob [1/fm^3]
-double EOS_BEST::get_pressure(double e, double rhob, double proper_tau) const {
+double EOS_BEST::get_pressure(double e, double rhob) const {
     int table_idx = get_table_idx(e);
     double f = interpolate2D(e, std::abs(rhob), table_idx, pressure_tb);
     return(f);
@@ -136,7 +136,7 @@ double EOS_BEST::get_pressure(double e, double rhob, double proper_tau) const {
 
 //! This function returns the local baryon chemical potential  mu_B in [1/fm]
 //! input local energy density eps [1/fm^4] and rhob [1/fm^3]
-double EOS_BEST::get_mu(double e, double rhob, double proper_tau) const {
+double EOS_BEST::get_mu(double e, double rhob) const {
     int table_idx = get_table_idx(e);
     double sign = rhob/(std::abs(rhob) + 1e-15);
     double mu = sign*interpolate2D(e, std::abs(rhob), table_idx,
@@ -145,7 +145,7 @@ double EOS_BEST::get_mu(double e, double rhob, double proper_tau) const {
 }
 
 
-double EOS_BEST::get_s2e(double s, double rhob, double proper_tau) const {
-    double e = get_s2e_finite_rhob(s, rhob, proper_tau);
+double EOS_BEST::get_s2e(double s, double rhob) const {
+    double e = get_s2e_finite_rhob(s, rhob);
     return(e);
 }

@@ -19,7 +19,6 @@ typedef struct {
     double e;
     double rhob;
     FlowVec u;
-    double proper_tau;
 } ReconstCell;
 
 typedef struct {

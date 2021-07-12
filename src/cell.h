@@ -13,8 +13,6 @@ class Cell_small {
 
     ViscousVec Wmunu;
     double pi_b    = 0.;
-
-    double proper_tau = 0;
 };
 
 #endif  // SRC_GRID_H_

@@ -166,19 +166,18 @@ int U_derivative::MakeDSpatial(double tau, SCGrid &arena,
     // dUsup[rk_flag][4][n] = partial_n (muB/T)
     // partial_x (muB/T) and partial_y (muB/T) first
     int m = 4;  // means (muB/T)
-    double rhob, eps, muB, T, proper_tau;
+    double rhob, eps, muB, T;
     rhob = arena(ix, iy, ieta).rhob;
     eps = arena(ix, iy, ieta).epsilon;
-    proper_tau = arena(ix, iy, ieta).proper_tau;
-    muB = eos.get_muB(eps, rhob, proper_tau);
-    T = eos.get_temperature(eps, rhob, proper_tau);
+    muB = eos.get_muB(eps, rhob);
+    T = eos.get_temperature(eps, rhob);
     double f = muB/T;
     Neighbourloop(arena, ix, iy, ieta, NLAMBDAS{
         double fp1, fm1;
-        fp1 = ( eos.get_muB(p1.epsilon, p1.rhob, p1.proper_tau)
-		/eos.get_temperature(p1.epsilon, p1.rhob, p1.proper_tau));
-        fm1 = ( eos.get_muB(m1.epsilon, m1.rhob, m1.proper_tau)
-		/eos.get_temperature(m1.epsilon, m1.rhob, m1.proper_tau));
+        fp1 = ( eos.get_muB(p1.epsilon, p1.rhob)
+               /eos.get_temperature(p1.epsilon, p1.rhob));
+        fm1 = ( eos.get_muB(m1.epsilon, m1.rhob)
+               /eos.get_temperature(m1.epsilon, m1.rhob));
         double g = minmod.minmod_dx(fp1, f, fm1)/delta[direction];
         dUsup[m][direction] = g;
     });
@@ -211,19 +210,18 @@ int U_derivative::MakeDTau(double tau,
 
     // Sangyong Nov 18 2014
     // Here we make the time derivative of (muB/T)
-    double tildemu, tildemu_prev, rhob, eps, muB, T, proper_tau;
+    double tildemu, tildemu_prev, rhob, eps, muB, T;
     int m = 4;
     // first order is more stable backward derivative
     rhob         = grid_pt->rhob;
     eps          = grid_pt->epsilon;
-    proper_tau   = grid_pt->proper_tau;
-    muB          = eos.get_muB(eps, rhob, proper_tau);
-    T            = eos.get_temperature(eps, rhob, proper_tau);
+    muB          = eos.get_muB(eps, rhob);
+    T            = eos.get_temperature(eps, rhob);
     tildemu      = muB/T;
     rhob         = grid_pt_prev->rhob;
     eps          = grid_pt_prev->epsilon;
-    muB          = eos.get_muB(eps, rhob, proper_tau);
-    T            = eos.get_temperature(eps, rhob, proper_tau);
+    muB          = eos.get_muB(eps, rhob);
+    T            = eos.get_temperature(eps, rhob);
     tildemu_prev = muB/T;
     f            = (tildemu - tildemu_prev)/(DATA.delta_tau);
     dUsup[m][0]  = -f;  // g00 = -1

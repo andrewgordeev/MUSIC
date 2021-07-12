@@ -75,14 +75,14 @@ void EOS_hotQCD::initialize_eos() {
 }
 
 
-double EOS_hotQCD::p_e_func(double e, double rhob, double proper_tau) const {
-    return(get_dpOverde3(e, rhob, proper_tau));
+double EOS_hotQCD::p_e_func(double e, double rhob) const {
+    return(get_dpOverde3(e, rhob));
 }
 
 
 //! This function returns the local temperature in [1/fm]
 //! input local energy density eps [1/fm^4] and rhob [1/fm^3]
-double EOS_hotQCD::get_temperature(double e, double rhob, double proper_tau) const {
+double EOS_hotQCD::get_temperature(double e, double rhob) const {
     double T = interpolate1D(e, 0, temperature_tb);  // 1/fm
     return(std::max(1e-15, T));
 }
@@ -90,18 +90,18 @@ double EOS_hotQCD::get_temperature(double e, double rhob, double proper_tau) con
 
 //! This function returns the local pressure in [1/fm^4]
 //! the input local energy density [1/fm^4], rhob [1/fm^3]
-double EOS_hotQCD::get_pressure(double e, double rhob, double proper_tau) const {
+double EOS_hotQCD::get_pressure(double e, double rhob) const {
     double f = interpolate1D(e, 0, pressure_tb);  // 1/fm^4
     return(std::max(1e-15, f));
 }
 
 
-double EOS_hotQCD::get_s2e(double s, double rhob, double proper_tau) const {
-    double e = get_s2e_finite_rhob(s, 0.0, proper_tau);
+double EOS_hotQCD::get_s2e(double s, double rhob) const {
+    double e = get_s2e_finite_rhob(s, 0.0);
     return(e);
 }
 
-double EOS_hotQCD::get_T2e(double T, double rhob, double proper_tau) const {
-    double e = get_T2e_finite_rhob(T, 0.0, proper_tau);
+double EOS_hotQCD::get_T2e(double T, double rhob) const {
+    double e = get_T2e_finite_rhob(T, 0.0);
     return(e);
 }
