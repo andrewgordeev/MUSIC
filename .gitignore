@@ -9,7 +9,8 @@ momentum*.dat
 results/
 obj/
 *.pyc
-*.txt
+CMake*.txt
+install*.txt
 mpihydro
 perf.data*
 a.out
