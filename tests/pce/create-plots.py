@@ -105,4 +105,4 @@ plt.plot(mathematica_data[:,0],mathematica_data[:,1], c='g', label = 'Mathematic
 plt.plot(-mathematica_data[:,0],mathematica_data[:,1], c='g')
 plt.legend()
 plt.title(r'$y = 0, \tau = 0.425 fm/c$')
-plt.savefig('VelocityComparison.png')
+plt.savefig('plots/VelocityComparison.png')

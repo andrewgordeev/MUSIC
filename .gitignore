@@ -18,3 +18,4 @@ build/
 MUSIChydro
 *.dylib
 *.so
+CMakeFiles/
