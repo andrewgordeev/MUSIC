@@ -1,6 +1,9 @@
 *.[oa]
 *.~
-*.dat
+eccentricities*.dat
+evolution*.dat
+surface*.dat
+momentum*.dat
 *.e
 .DS_Store
 results/
