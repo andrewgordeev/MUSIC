@@ -20,7 +20,7 @@ var2 = p/e
 plt.scatter(var1, var2, s=5)
 plt.xlabel(r'$e (GeV/fm^3)$')
 plt.ylabel(r'$p/e$')
-plt.savefig('plots/p_over_e.png')
 plt.xscale('log')
 #plt.yscale('log')
 plt.xlim(1e-7,100)
+plt.savefig('plots/p_over_e.png')
