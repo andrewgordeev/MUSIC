@@ -149,7 +149,7 @@ void Advance::FirstRKStepT(const double tau, double x_local, double y_local,
  
     double tau_next = tau + DATA.delta_tau;
     auto grid_rk_t = reconst_helper.ReconstIt_shell(
-                                tau_next, qi, arena_current(ix, iy, ieta)); 
+                                tau_next, qi, arena_current(ix, iy, ieta));
     UpdateTJbRK(grid_rk_t, arena_future(ix, iy, ieta));
 }
 

@@ -15,7 +15,7 @@ temp = eos_data[:,3] # GeV
 cs2 = cs2_data[:,1]
 
 var1 = e
-var2 = p/e
+var2 = cs2
 
 plt.scatter(var1, var2, s=5)
 plt.xlabel(r'$e (GeV/fm^3)$')
@@ -23,4 +23,4 @@ plt.ylabel(r'$p/e$')
 plt.xscale('log')
 #plt.yscale('log')
 plt.xlim(1e-7,100)
-plt.savefig('plots/p_over_e.png')
+#plt.savefig('plots/p_over_e.png')

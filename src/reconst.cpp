@@ -173,7 +173,7 @@ int Reconst::solve_velocity_Newton(const double v_guess, const double T00,
         iter++;
         reconst_velocity_fdf(v_prev, T00, M, J0, fv, dfdv);
         v_next = v_prev - (fv/dfdv);
-        v_next = std::max(0.0, std::min(1.0, v_next));
+	v_next = std::max(0.0, std::min(1.0, v_next));
         abs_error_v = fv;
         rel_error_v = 2.*abs_error_v/(v_next + v_prev + 1e-15);
         v_prev = v_next;
