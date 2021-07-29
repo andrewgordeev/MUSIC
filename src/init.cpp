@@ -41,7 +41,7 @@ void Init::InitArena(SCGrid &arena_prev, SCGrid &arena_current,
         music_message << "Using Initial_profile=" << DATA.Initial_profile;
         DATA.nx = 2;
         DATA.ny = 2;
-        DATA.neta = 695;
+        DATA.neta = 95;
         DATA.delta_x = 0.1;
         DATA.delta_y = 0.1;
         DATA.delta_eta = 0.02;

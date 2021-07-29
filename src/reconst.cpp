@@ -173,12 +173,12 @@ int Reconst::solve_velocity_Newton(const double v_guess, const double T00,
     do {
         iter++;
         reconst_velocity_fdf(v_prev, T00, M, J0, fv, dfdv);
-        //v_next = v_prev - (fv/dfdv);
-	//v_next = std::max(0.0, std::min(1.0, v_next));
-        //abs_error_v = fv;
-	v_next = M / (T00 + eos.get_pressure(T00-v_prev*M, J0*sqrt(1-v_prev*v_prev)));
-	abs_error_v = v_next - v_prev;
-	if (abs_error_v > 0.001 and T00-v_next*M > 0.1 and fabs(eos.get_pressure(T00-v_prev*M, J0*sqrt(1-v_prev*v_prev)) - eos.get_pressure(T00-v_next*M, J0*sqrt(1-v_next*v_next))) > 0.000001) {std::cout << v_next << " " << v_prev << " " << eos.get_pressure(T00-v_prev*M, J0*sqrt(1-v_prev*v_prev)) << " " << eos.get_pressure(T00-v_next*M, J0*sqrt(1-v_next*v_next)) << " " << T00 << std::endl;}
+        v_next = v_prev - (fv/dfdv);
+	v_next = std::max(0.0, std::min(1.0, v_next));
+        abs_error_v = fv;
+	//v_next = M / (T00 + eos.get_pressure(T00-v_prev*M, J0*sqrt(1-v_prev*v_prev)));
+	//abs_error_v = v_next - v_prev;
+	//if (abs_error_v > 0.001 and T00-v_next*M > 0.1 and fabs(eos.get_pressure(T00-v_prev*M, J0*sqrt(1-v_prev*v_prev)) - eos.get_pressure(T00-v_next*M, J0*sqrt(1-v_next*v_next))) > 0.000001) {std::cout << v_next << " " << v_prev << " " << eos.get_pressure(T00-v_prev*M, J0*sqrt(1-v_prev*v_prev)) << " " << eos.get_pressure(T00-v_next*M, J0*sqrt(1-v_next*v_next)) << " " << T00 << std::endl;}
         rel_error_v = 2.*abs_error_v/(v_next + v_prev + 1e-15);
         v_prev = v_next;
 
