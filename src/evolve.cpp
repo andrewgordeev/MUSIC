@@ -73,10 +73,20 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
     SCGrid arena_freezeout(arena_current.nX(),
                            arena_current.nY(),
                            arena_current.nEta());
-
+ 
+    SCGrid arena_initial(arena_current.nX(), arena_current.nY(), arena_current.nEta());
+    GridPointer ap_initial(&arena_initial, closer);
+    
     double T_max = -1;
     for (int it = 0; it <= itmax; it++) {
         tau = tau0 + dt*it;
+
+	if (it == 0) {store_previous_step_for_freezeout(*ap_current, arena_initial);}
+
+	// Testing: after first timestep of evolution, force temperature and flow velocity profiles to match Mathematica result. - Andrew
+	//if (it == 1) {
+	  //	  modify_first_timestep(*ap_current, arena_initial);
+	//}
 
         if (DATA.Initial_profile == 13 || DATA.Initial_profile == 30) {
             hydro_source_terms_ptr.lock()->prepare_list_for_current_tau_frame(tau);
@@ -128,7 +138,7 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
                                                                   tau);
             }
         }
-
+   
         grid_info.output_momentum_anisotropy_vs_tau(
                                             tau, -0.5, 0.5, *ap_current);
         if (DATA.Initial_profile == 13) {
@@ -176,6 +186,8 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
                                                   arena_freezeout);
             }
         }
+	
+	
         music_message << emoji::clock()
                       << " Done time step " << it << "/" << itmax
                       << " tau = " << tau << " fm/c";
@@ -190,6 +202,29 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
     }
     music_message.info("Finished.");
     return 1;
+}
+
+void Evolve::modify_first_timestep(SCGrid &arena_current, SCGrid &arena_initial) {
+   double tau = 0.4025;
+   double tau0 = 0.4;
+   for (int ieta = 0; ieta < arena_current.nEta(); ieta++)
+       for (int ix = 0;   ix   < arena_current.nX();   ix++)
+	  for (int iy = 0;   iy   < arena_current.nY();   iy++) {
+	      double cs2_local = eos.get_cs2(arena_current(ix, iy, ieta).epsilon, arena_current(ix, iy, ieta).rhob);
+	      double x = (-15 + ix*0.1);
+	      double y = (-15 + iy*0.1);
+	      double r = sqrt(x*x + y*y);
+	      //std::cout << (tau - std::pow(tau,cs2_local)*std::pow(tau0,1-cs2_local))/(1-cs2_local) << std::endl;
+	      double mathematica_ur = 2./25. * (tau - std::pow(tau,cs2_local)*std::pow(tau0,1-cs2_local)) / (1 - cs2_local) * r;
+	      if (r == 0) {r = 1e-10;}
+	      // if (arena_current(ix, iy, ieta).u[2] != mathematica_ur * y/r or arena_current(ix, iy, ieta).u[1] != mathematica_ur * x/r or arena_current(ix, iy, ieta).u[0] != sqrt(1 + mathematica_ur*mathematica_ur) or arena_current(ix, iy, ieta).u[2] != 0 or arena_current(ix, iy, ieta).u[1] != 0 or arena_current(ix, iy, ieta).u[0] != 1) {std::cout << "Printing: " << cs2_local << " " << arena_current(ix,iy,ieta).u[0] << " " << arena_current(ix,iy,ieta).u[1] << " " << mathematica_ur << " " << r << " " << x << " " << y << std::endl;}
+	      arena_current(ix, iy, ieta).u[1] = mathematica_ur * x/r;
+	      arena_current(ix, iy, ieta).u[2] = mathematica_ur * y/r;
+	      arena_current(ix, iy, ieta).u[0] = sqrt(1 + mathematica_ur * mathematica_ur);
+	      // if (arena_current(ix, iy, ieta).epsilon != arena_prev(ix, iy, ieta).epsilon) {std::cout << "Printing: " << arena_current(ix, iy, ieta).epsilon << " " << arena_prev(ix, iy, ieta).epsilon << std::endl;}
+	      arena_current(ix, iy, ieta).epsilon = arena_initial(ix, iy, ieta).epsilon * std::pow(tau0/tau, cs2_local);
+	      //std::cout << "Printing: " << mathematica_ur << " " << arena_current(ix,iy,ieta).epsilon << std::endl;
+   }   
 }
 
 void Evolve::store_previous_step_for_freezeout(SCGrid &arena_current,

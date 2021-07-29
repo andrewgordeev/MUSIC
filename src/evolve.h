@@ -69,6 +69,7 @@ class Evolve {
     void regulate_Wmunu(const double u[], const double Wmunu[4][4], double Wmunu_regulated[4][4]) const;
 
     void initialize_freezeout_surface_info();
+    void modify_first_timestep(SCGrid &arena_current, SCGrid &arena_initial);
 };
 
 #endif  // SRC_EVOLVE_H_
