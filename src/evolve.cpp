@@ -84,9 +84,9 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
 	if (it == 0) {store_previous_step_for_freezeout(*ap_current, arena_initial);}
 
 	// Testing: after first timestep of evolution, force temperature and flow velocity profiles to match Mathematica result. - Andrew
-	if (it == 1) {
-	    modify_first_timestep(*ap_current, arena_initial);
-	}
+	//	if (it == 1) {
+	//    modify_first_timestep(*ap_current, arena_initial);
+	//}
 
         if (DATA.Initial_profile == 13 || DATA.Initial_profile == 30) {
             hydro_source_terms_ptr.lock()->prepare_list_for_current_tau_frame(tau);
