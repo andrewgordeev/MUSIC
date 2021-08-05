@@ -38,8 +38,6 @@ double EOS_base::interpolate1D(double e, int table_idx, double ***table) const {
 // as one-dimensional arrays on an equally spacing lattice grid
 // units: e is in 1/fm^4
     //double local_ed = e*hbarc;  // [GeV/fm^3]
-
-  // Using PCE EoS, this instead works to find P(T), e(T), s(T) with even spacing in T - Andrew
     double local_ed = e;
 
     const double e0       = e_bounds[table_idx];
@@ -152,7 +150,7 @@ double EOS_base::get_dpOverde3(double e, double rhob, double proper_tau) const {
    double pL = get_pressure(eLeft, rhob, proper_tau);   // 1/fm^4
    double pR = get_pressure(eRight, rhob, proper_tau);  // 1/fm^4
       
-   double dpde = (pR - pL)/(eRight - eLeft);
+   double dpde = 1/3.;//(pR - pL)/(eRight - eLeft);
    return dpde;
 }
 
@@ -194,6 +192,7 @@ double EOS_base::get_T2e_finite_rhob(const double T, const double rhob, const do
     double eps_mid   = (eps_upper + eps_lower)/2.;
     double T_lower   = get_temperature(eps_lower, rhob, proper_tau);
     double T_upper   = get_temperature(eps_upper, rhob, proper_tau);
+
     int ntol         = 1000;
     if (T_goal < 0.0 || T_goal > T_upper) {
         cout << "get_T2e:: T is out of bound, "

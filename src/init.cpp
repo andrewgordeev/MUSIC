@@ -240,7 +240,25 @@ void Init::InitTJb(SCGrid &arena_prev, SCGrid &arena_current) {
         music_message << "file name used: " << DATA.initName;
         music_message.flush("info");
         initial_UMN_with_rhob(arena_prev, arena_current);
-    }
+
+    } else if (DATA.Initial_profile == 666) {
+        // initialize with cylindrical initial conditions
+        music_message.info(" Initializing with cylindrical initial conditions");
+        music_message.flush("info");
+  
+        #pragma omp parallel for
+        for (int ieta = 0; ieta < arena_current.nEta(); ieta++) {
+            initial_cylindrical(ieta, arena_prev, arena_current);
+        }
+    } // else if (DATA.Initial_profile == 667) {
+    //     // Gubser flow test
+    //     music_message.info(" Bjorken initial condition ... ");
+    //     music_message.info(" ----- information on initial distribution -----");
+        
+    //     #pragma omp parallel for
+    //     for (int ieta = 0; ieta < arena_current.nEta(); ieta++) {
+    //         initial_Bjorken(ieta, arena_prev, arena_current);
+    // }
     music_message.info("initial distribution done.");
 }
 
@@ -1091,4 +1109,78 @@ void Init::output_initial_density_profiles(SCGrid &arena) {
         }
     }
     music_message.info("done!");
+}
+
+
+double Init::cylindrical_temperature_init(double r) {
+
+	const double T0_in_GeV=DATA.T_init_in_GeV;
+	const double sigma=DATA.T_width_in_fm;
+	//const double sigma_regul=20*sigma;
+//	return T0*(exp(-r*r/(sigma*sigma))+1e-3*exp(-r*r/(sigma_regul*sigma_regul)));
+	return T0_in_GeV*exp(-r*r/(sigma*sigma));
+    //Log[T0Global (Exp[-r^2/3^2] + .3 Exp[-(r - 4)^2/1^2] + 
+    //    0*.9 Exp[-(r - 7)^2/1^2])]
+	//return T0*(exp(-r*r/(3*3))+0.3*exp(-(r-4)*(r-4)/(1*1)));
+
+
+}
+
+void Init::initial_cylindrical(int ieta, SCGrid &arena_prev,
+                               SCGrid &arena_current) {
+
+    TransportCoeffs transport_coeffs_(eos,DATA);
+
+    const int nx = arena_current.nX();
+    const int ny = arena_current.nY();
+    const double dx=DATA.delta_x;
+    const double dy=DATA.delta_y;
+
+    double eta = (DATA.delta_eta)*ieta - (DATA.eta_size)/2.0;
+    double eta_envelop_ed = eta_profile_normalisation(eta);
+    int entropy_flag = DATA.initializeEntropy;
+    for (int ix = 0; ix < nx; ix++) {
+	//const double x=(ix-nx/2.)*dx;
+        const double x = - DATA.x_size/2. + ix*dx;
+        for (int iy = 0; iy< ny; iy++) {
+            const double y = - DATA.y_size/2. + iy*dy;
+            //const double y=(iy-ny/2.)*dy;
+            double rhob = 0.0;
+            double epsilon = 0.0;
+            double T_in_fm;
+            if (entropy_flag == 0) {
+                const double r=sqrt(x*x+y*y);
+                T_in_fm=cylindrical_temperature_init(r)/hbarc;
+                    
+                //std::cout << r << " " << T_in_fm*hbarc << " " << eos.get_T2e(T_in_fm*hbarc, 0.0,0.4) << "\n";
+                epsilon = (eos.get_T2e(T_in_fm*hbarc, 0.0, -1));  // 1/fm^4
+            } else {
+		        std::cout << "This shouldn't happen...\n";
+                exit(1);
+                //double local_sd = (temp_profile_ed[ix][iy]*DATA.sFactor
+                //                   *eta_envelop_ed);
+                //epsilon = eos.get_s2e(local_sd, rhob);
+            }
+            //if (epsilon < 0.00000000001)
+            //    epsilon = 0.00000000001;
+
+            arena_current(ix, iy, ieta).epsilon = epsilon;
+            arena_current(ix, iy, ieta).rhob = rhob;
+
+            arena_current(ix, iy, ieta).u[0] = 1;
+            arena_current(ix, iy, ieta).u[1] = 0.0;
+            arena_current(ix, iy, ieta).u[2] = 0.0;
+            arena_current(ix, iy, ieta).u[3] = 0.0;
+
+
+            arena_current(ix, iy, ieta).pi_b = -1*transport_coeffs_.get_zeta_over_s(T_in_fm)*eos.get_entropy(epsilon,0.,-1)/DATA.tau0;
+
+            arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
+
+            //arena_current(ix, iy, ieta).u[0] = 1;
+            //arena_current(ix, iy, ieta).u[1] = 0.0;
+            //arena_current(ix, iy, ieta).u[2] = 0.0;
+            //arena_current(ix, iy, ieta).u[3] = 0.0;
+        }
+    }
 }

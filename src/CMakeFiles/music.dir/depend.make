@@ -211,6 +211,7 @@ src/CMakeFiles/music.dir/init.cpp.o: src/hydro_source_base.h
 src/CMakeFiles/music.dir/init.cpp.o: src/init.cpp
 src/CMakeFiles/music.dir/init.cpp.o: src/init.h
 src/CMakeFiles/music.dir/init.cpp.o: src/pretty_ostream.h
+src/CMakeFiles/music.dir/init.cpp.o: src/transport_coeffs.h
 src/CMakeFiles/music.dir/init.cpp.o: src/util.h
 
 src/CMakeFiles/music.dir/minmod.cpp.o: src/data.h

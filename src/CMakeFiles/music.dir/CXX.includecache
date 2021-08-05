@@ -6,31 +6,25 @@
 
 #IncludeRegexTransform: 
 
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-data_struct.h
 /home/andrew/Documents/Work/music-hydro/src/data_struct.h
 array
 -
 
-/home/andrew/Documents/Work/music-hydro/src/data.h
-array
+/home/andrew/Documents/Work/music-hydro/src/eos_PCE.cpp
+eos_PCE.h
+/home/andrew/Documents/Work/music-hydro/src/eos_PCE.h
+util.h
+/home/andrew/Documents/Work/music-hydro/src/util.h
+sstream
 -
-stdio.h
+fstream
 -
-stdlib.h
--
-string
--
-
-/home/andrew/Documents/Work/music-hydro/src/data_struct.h
-array
+cmath
 -
 
-/home/andrew/Documents/Work/music-hydro/src/eos.h
+/home/andrew/Documents/Work/music-hydro/src/eos_PCE.h
 eos_base.h
 /home/andrew/Documents/Work/music-hydro/src/eos_base.h
-memory
--
 
 /home/andrew/Documents/Work/music-hydro/src/eos_base.h
 pretty_ostream.h
@@ -39,16 +33,6 @@ string
 -
 vector
 -
-
-/home/andrew/Documents/Work/music-hydro/src/grid.h
-cassert
--
-vector
--
-cell.h
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-grid.h
-/home/andrew/Documents/Work/music-hydro/src/grid.h
 
 /home/andrew/Documents/Work/music-hydro/src/pretty_ostream.h
 iostream
@@ -57,44 +41,6 @@ sstream
 -
 cstring
 -
-
-/home/andrew/Documents/Work/music-hydro/src/reconst.cpp
-iostream
--
-algorithm
--
-cmath
--
-data.h
-/home/andrew/Documents/Work/music-hydro/src/data.h
-cell.h
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-grid.h
-/home/andrew/Documents/Work/music-hydro/src/grid.h
-eos.h
-/home/andrew/Documents/Work/music-hydro/src/eos.h
-reconst.h
-/home/andrew/Documents/Work/music-hydro/src/reconst.h
-
-/home/andrew/Documents/Work/music-hydro/src/reconst.h
-array
--
-iostream
--
-util.h
-/home/andrew/Documents/Work/music-hydro/src/util.h
-data.h
-/home/andrew/Documents/Work/music-hydro/src/data.h
-cell.h
-/home/andrew/Documents/Work/music-hydro/src/cell.h
-grid.h
-/home/andrew/Documents/Work/music-hydro/src/grid.h
-eos.h
-/home/andrew/Documents/Work/music-hydro/src/eos.h
-pretty_ostream.h
-/home/andrew/Documents/Work/music-hydro/src/pretty_ostream.h
-data_struct.h
-/home/andrew/Documents/Work/music-hydro/src/data_struct.h
 
 /home/andrew/Documents/Work/music-hydro/src/util.h
 stdio.h

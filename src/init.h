@@ -11,6 +11,7 @@
 #include "cell.h"
 #include "grid.h"
 #include "eos.h"
+#include "transport_coeffs.h"
 #include "hydro_source_base.h"
 #include "pretty_ostream.h"
 
@@ -57,6 +58,9 @@ class Init {
     void initial_MCGlb_with_rhob         (SCGrid &arena_prev, SCGrid &arena_current);
     void initial_UMN_with_rhob           (SCGrid &arena_prev, SCGrid & arena_current);
     void initial_with_jetscape           (int ieta, SCGrid &arena_prev, SCGrid &arena_current);
+    void initial_cylindrical             (int ieta, SCGrid &arena_prev, SCGrid &arena_current);
+
+    double cylindrical_temperature_init(double r);
 
     void get_jetscape_preequilibrium_vectors(
         std::vector<double> e_in,

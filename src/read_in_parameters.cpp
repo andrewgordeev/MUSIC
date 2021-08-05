@@ -327,6 +327,31 @@ InitData read_in_parameters(std::string input_file) {
         istringstream(tempinput) >> temptau0;
     parameter_list.tau0 = temptau0;
 
+        // Initial temperature for Bjorken initial conditions (GeV)
+    double tempT_init   = .4;
+    tempinput = Util::StringFind4(input_file, "T_init_in_GeV");
+    if (tempinput != "empty") istringstream ( tempinput ) >> tempT_init  ;
+    parameter_list.T_init_in_GeV   = tempT_init;
+
+    // Initial pi^\mu\nu in the Bjorken case is given by this parameter multiplied by the Navier-Stokes value
+    double temppimunu_ns_factor   = 0.0;
+    tempinput = Util::StringFind4(input_file, "pimunu_NS_factor");
+    if (tempinput != "empty") istringstream ( tempinput ) >> temppimunu_ns_factor  ;
+    parameter_list.pimunu_NS_factor   = temppimunu_ns_factor;
+
+    // Initial pi^\mu\nu in the Bjorken case is given by this parameter multiplied by the Navier-Stokes value
+    double tempPi_ns_factor   = 0.0;
+    tempinput = Util::StringFind4(input_file, "Pi_NS_factor");
+    if (tempinput != "empty") istringstream ( tempinput ) >> tempPi_ns_factor  ;
+    parameter_list.Pi_NS_factor   = tempPi_ns_factor;
+
+    // Width of Gaussian temperature profile (for init profile 666)
+    double tempT_width   = 1000.;
+    tempinput = Util::StringFind4(input_file, "T_width_in_fm");
+    if (tempinput != "empty") istringstream ( tempinput ) >> tempT_width  ;
+    parameter_list.T_width_in_fm   = tempT_width;
+    
+
     /* x-grid, for instance, runs from 0 to nx */
     parameter_list.delta_x =
             parameter_list.x_size/static_cast<double>(parameter_list.nx - 1); 

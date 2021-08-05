@@ -76,6 +76,11 @@ typedef struct init_data {
     int rk_order;
     double minmod_theta;
 
+    double T_init_in_GeV;
+    double pimunu_NS_factor;
+    double Pi_NS_factor;
+    double T_width_in_fm;
+
     double sFactor;     //!< overall normalization on energy density profile
     int whichEOS;       //!< type of EoS
     //! flag for boost invariant simulations
