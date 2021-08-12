@@ -154,7 +154,7 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
         fugacity = 0;
     }
     else if (tau0 <= 0 or tau_eq <= 0) {
-        fugacity = 0.1;
+        fugacity = 0;
     }
     else {
         fugacity = 1 - exp((tau0 - proper_tau)/tau_eq);
