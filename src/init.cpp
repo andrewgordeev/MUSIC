@@ -1153,7 +1153,7 @@ void Init::initial_cylindrical(int ieta, SCGrid &arena_prev,
                 T_in_fm=cylindrical_temperature_init(r)/hbarc;
                     
                 //std::cout << r << " " << T_in_fm*hbarc << " " << eos.get_T2e(T_in_fm*hbarc, 0.0,0.4) << "\n";
-                epsilon = (eos.get_T2e(T_in_fm*hbarc, 0.0, -1));  // 1/fm^4
+                epsilon = (eos.get_T2e(T_in_fm*hbarc, 0.0, DATA.tau0));  // 1/fm^4
             } else {
 		        std::cout << "This shouldn't happen...\n";
                 exit(1);
@@ -1173,7 +1173,7 @@ void Init::initial_cylindrical(int ieta, SCGrid &arena_prev,
             arena_current(ix, iy, ieta).u[3] = 0.0;
 
 
-            arena_current(ix, iy, ieta).pi_b = -1*transport_coeffs_.get_zeta_over_s(T_in_fm)*eos.get_entropy(epsilon,0.,-1)/DATA.tau0;
+            arena_current(ix, iy, ieta).pi_b = -1*transport_coeffs_.get_zeta_over_s(T_in_fm)*eos.get_entropy(epsilon,0.,DATA.tau0)/DATA.tau0;
 
             arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
 

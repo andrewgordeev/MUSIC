@@ -42,7 +42,7 @@ void EOS_PCE::initialize_eos() {
     cs2_tb         = new double** [ntables];
 
     std::ifstream qcd_eos(path + "/hrg_hotqcd_eos_binary_e0p25spacing.dat", std::ios::binary);
-    std::ifstream gluon_eos(path + "/gluon_eos_binary_e0p25spacing.dat", std::ios::binary);
+    std::ifstream gluon_eos(path + "/gluon_eos_binary_e0p25spacing_alt.dat", std::ios::binary);
     
     for (int itable = 0; itable < ntables; itable++) { // 0 = QCD, 1 = gluon
         std::ifstream* eos_file;
@@ -112,7 +112,7 @@ double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const 
     T_gluon = interpolate1D(std::pow(e,0.25), 1, temperature_tb);
     double fugacity = get_fugacity(proper_tau);
 
-    T_QCD = std::pow(e * std::pow(Util::hbarc,3),0.25) * 30./std::pow(M_PI,2) * 1/(2*(3*3.-1) + 3.5*3*3);
+    //T_QCD = std::pow(e * std::pow(Util::hbarc,3),0.25) * 30./std::pow(M_PI,2) * 1/(2*(3*3.-1) + 3.5*3*3);
     double T = fugacity * T_QCD + (1 - fugacity) * T_gluon;
     
     //T = (.15274608127810668 * std::pow(e*Util::hbarc, .2478330589996049))/Util::hbarc;
@@ -127,7 +127,7 @@ double EOS_PCE::get_pressure(double e, double rhob, double proper_tau) const {
     double f_QCD = interpolate1D(std::pow(e,0.25), 0, pressure_tb);  // 1/fm^4
     double f_gluon = interpolate1D(std::pow(e,0.25), 1, pressure_tb);
 
-    f_QCD = e/3.;
+    //f_QCD = e/3.;
     double fugacity = get_fugacity(proper_tau);
     double f = fugacity * f_QCD + (1 - fugacity) * f_gluon;
 
@@ -154,7 +154,7 @@ double EOS_PCE::get_fugacity(double proper_tau) const {
         fugacity = 0;
     }
     else if (tau0 <= 0 or tau_eq <= 0) {
-        fugacity = 1;
+        fugacity = 0.1;
     }
     else {
         fugacity = 1 - exp((tau0 - proper_tau)/tau_eq);
@@ -175,7 +175,7 @@ double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
     cs2_QCD = interpolate1D(std::pow(e,0.25), 0, cs2_tb);
     //double cs2_gluon = interpolate1D(std::pow(e,0.25), 1, cs2_tb);
     double fugacity = get_fugacity(proper_tau);
-    cs2_QCD = 1/3.;
+    //cs2_QCD = 1/3.;
     double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
     //double T = interpolate1D(e,0,temperature_tb)*Util::hbarc;
     //if (T < 0.18410179) cs2 = 246.0490286078087 * std::pow(T,3) - 83.01937867454492 * std::pow(T,2) + 7.936821067345355 * T - 0.00025794218162239854;

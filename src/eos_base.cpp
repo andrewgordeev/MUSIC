@@ -150,7 +150,7 @@ double EOS_base::get_dpOverde3(double e, double rhob, double proper_tau) const {
    double pL = get_pressure(eLeft, rhob, proper_tau);   // 1/fm^4
    double pR = get_pressure(eRight, rhob, proper_tau);  // 1/fm^4
       
-   double dpde = 1/3.;//(pR - pL)/(eRight - eLeft);
+   double dpde = (pR - pL)/(eRight - eLeft);
    return dpde;
 }
 
