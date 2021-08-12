@@ -42,7 +42,7 @@ void EOS_PCE::initialize_eos() {
     cs2_tb         = new double** [ntables];
 
     std::ifstream qcd_eos(path + "/hrg_hotqcd_eos_binary_e0p25spacing.dat", std::ios::binary);
-    std::ifstream gluon_eos(path + "/gluon_eos_binary_e0p25spacing_alt.dat", std::ios::binary);
+    std::ifstream gluon_eos(path + "/gluon_eos_binary_e0p25spacing.dat", std::ios::binary);
     
     for (int itable = 0; itable < ntables; itable++) { // 0 = QCD, 1 = gluon
         std::ifstream* eos_file;
