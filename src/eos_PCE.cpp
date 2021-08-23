@@ -68,8 +68,8 @@ void EOS_PCE::initialize_eos() {
 	cs2_tb[itable] = Util::mtx_malloc(nb_length[itable], e_length[itable]);
         double temp;
         for (int ii = 0; ii < e_length[itable]; ii++) {
-	    eos_file->read((char*)&temp, sizeof(double));  // e^(1/4)
-            //temp /= Util::hbarc;      // 1/fm
+	    eos_file->read((char*)&temp, sizeof(double));  // e^(1/4) (1/fm)
+            //temp /= Util::hbarc;      // 1/fm^4
             if (ii == 0) e_bounds[itable] = temp;
             if (ii == 1) e_spacing[itable] = temp - e_bounds[itable];
             if (ii == e_length[itable] - 1) set_eps_max(std::pow(temp,4));

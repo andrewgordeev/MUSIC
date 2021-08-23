@@ -15,19 +15,19 @@ results_file = '../../evolution_xyeta.dat'
 xmax = 15.0
 ymax = 15.0
 t0 = 0.4
-tmax = t0+0.0025*1
-dx = 0.03
-dy = 0.03
-dt = 0.0025
+tmax = t0+0.0025*400
+dx = 0.1
+dy = 0.1
+dt = 0.0025*10
 nx = int(2*xmax/dx)
 ny = int(2*ymax/dy)
-nt = int((tmax-t0)/dt + 1)
+nt = int((tmax-t0)/dt + 1.01)
 
 tvals = np.array([])
 yvals = np.array([])
 
 for t in np.arange(t0, tmax+dt, dt):
-    if t > tmax:
+    if t > tmax*1.001:
         break
     tvals = np.append(tvals, np.repeat(t,nx*ny))
 
@@ -39,10 +39,11 @@ xvals = np.tile(np.arange(-xmax,xmax,dx),ny*nt)
 
 results = np.loadtxt(results_file)
 tempvals = 1000 * results[:,0]
-vxvals = results[:,2]
-vyvals = results[:,3]
-vzvals = results[:,4]
+vxvals = results[:,3]
+vyvals = results[:,4]
+vzvals = results[:,5]
 evals = results[:,1]
+pvals = results[:,7]
    
 rvals = np.sqrt(xvals**2 + yvals**2)
 vvals = np.sqrt(vxvals**2 + vyvals**2)
@@ -63,10 +64,10 @@ vvals = np.sqrt(vxvals**2 + vyvals**2)
 """ Filter to get one slice of y, t values """
 
 grid_step = 0.000001
-step_fraction = 0.00001
+step_fraction = 0.000001
 xtarget = 0.0
 ytarget = 0.0
-ttarget = 0.4025
+ttarget = 0.655
 
 newyvals = yvals[abs(yvals-ytarget)<grid_step]
 newxvals = xvals[abs(yvals-ytarget)<grid_step]
@@ -77,6 +78,7 @@ newvxvals = vxvals[abs(yvals-ytarget)<grid_step]
 newvyvals = vyvals[abs(yvals-ytarget)<grid_step]
 newvzvals = vzvals[abs(yvals-ytarget)<grid_step]
 newevals = evals[abs(yvals-ytarget)<grid_step]
+newpvals = pvals[abs(yvals-ytarget)<grid_step]
 
 newtempvals = newtempvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newvvals = newvvals[abs(newtvals-ttarget)<grid_step*step_fraction]
@@ -84,6 +86,7 @@ newvxvals = newvxvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newvyvals = newvyvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newvzvals = newvzvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newevals = newevals[abs(newtvals-ttarget)<grid_step*step_fraction]
+newpvals = newpvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newxvals = newxvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 newtvals = newtvals[abs(newtvals-ttarget)<grid_step*step_fraction]
 
@@ -110,11 +113,11 @@ plt.xlabel(r'$x$ (fm)')
 #plt.scatter(rvals, tvals, c=tempvals, cmap=plt.cm.jet, vmin=0, vmax=400)
 plt.plot(newxvals, newvvals, c='b', label = 'MUSIC')
 #plt.plot(xvals[tvals==0.405], vxvals[tvals==0.405], label='MUSIC')
-mathematica_data = np.fromfile('mathematica_plot.dat').reshape(-1,2)
-plt.plot(mathematica_data[:,0],mathematica_data[:,1], c='g', label = 'Mathematica')
-plt.plot(-mathematica_data[:,0],mathematica_data[:,1], c='g')
+mathematica_data = np.fromfile('../../../ideal_hydro_cylindrical/mathematica_plot.dat').reshape(-1,2)
+#plt.plot(mathematica_data[:,0],mathematica_data[:,1], c='g', label = 'Mathematica')
+#plt.plot(-mathematica_data[:,0],mathematica_data[:,1], c='g')
 plt.legend()
-plt.title(r'$y = 0, \tau = 0.4025 fm/c$')
+plt.title(r'$y = 0, \tau = 0.5 fm/c$')
 #plt.yscale('log')
 #plt.ylim(0,0.01)
 #plt.savefig('plots/VelocityComparison.png')

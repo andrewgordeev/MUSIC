@@ -50,7 +50,7 @@ class Advance {
     void MakeDeltaQI(double tau, SCGrid &arena_current,
                      int ix, int iy, int ieta, TJbVec &qi, int rk_flag);
     double MaxSpeed(double tau, int direc, const ReconstCell &grid_p);
-    double get_TJb(const ReconstCell &grid_p, const int rk_flag, const int mu, const int nu);
+    double get_TJb(const ReconstCell &grid_p, const int rk_flag, const int mu, const int nu, const int ix, const int iy);
     double get_TJb(const Cell_small &grid_p, const int mu, const int nu);
 };
 

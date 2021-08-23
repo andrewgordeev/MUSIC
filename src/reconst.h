@@ -33,13 +33,13 @@ class Reconst {
     Reconst(const EOS &eos, const InitData &DATA_in);
 
     ReconstCell ReconstIt_shell(double tau, const TJbVec &tauq_vec,
-                                const Cell_small &grid_pt);
+                                const Cell_small &grid_pt, const int flag2);
 
     void revert_grid(ReconstCell &grid_current,
                      const Cell_small &grid_prev) const;
 
     int ReconstIt_velocity_Newton(ReconstCell &grid_p, double tau,
-                                  const TJbVec &q, const Cell_small &grid_pt);
+                                  const TJbVec &q, const Cell_small &grid_pt, const int flag);
     
     void reconst_velocity_fdf(const double v, const double T00, const double M,
                               const double J0, const double proper_tau, double &fv, double &dfdv) const;
