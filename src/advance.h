@@ -42,6 +42,8 @@ class Advance {
                       int rk_flag, double theta_local, DumuVec &a_local,
                       VelocityShearVec &sigma_local, DmuMuBoverTVec &baryon_diffusion_vector, int ieta, int ix, int iy);
 
+    void Advection(SCGrid &arena_current, SCGrid &arena_future);
+
     void UpdateTJbRK(const ReconstCell &grid_rk, Cell_small &grid_pt);
     void QuestRevert(double tau, Cell_small *grid_pt, int ieta, int ix, int iy);
     void QuestRevert_qmu(double tau, Cell_small *grid_pt,

@@ -67,6 +67,8 @@ typedef struct init_data {
     double eta_size;    //!< -eta_size/2 < eta < eta_size/2
     double tau_size;    //!< tau_0 < tau < tau0+tau_size
     double tau0;
+    double tau_eq_l;
+    double tau_eq_s;
 
     double delta_x;
     double delta_y;
@@ -100,7 +102,8 @@ typedef struct init_data {
 
     int alpha_max;          //!< dimension of TJb
     int turn_on_rhob;       //!< flag to include baryon current
-
+  
+    double quest_revert_strength;
     int viscosity_flag;     //!< flag to include viscosity in the simulation
     int turn_on_shear;      //!< flag to include shear viscosity
     int turn_on_bulk;       //!< flag to include bulk viscosity

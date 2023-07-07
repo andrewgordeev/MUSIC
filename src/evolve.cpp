@@ -28,6 +28,7 @@ Evolve::Evolve(const EOS &eosIn, const InitData &DATA_in,
     grid_info(DATA_in, eosIn), advance(eosIn, DATA_in, hydro_source_ptr_in),
     u_derivative(DATA_in, eosIn) {
 
+
     rk_order  = DATA_in.rk_order;
     if (DATA.freezeOutMethod == 4) {
         initialize_freezeout_surface_info();
@@ -74,8 +75,9 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
                            arena_current.nY(),
                            arena_current.nEta());
 
-    double T_max = -1;
+    //int T_max;
     for (int it = 0; it <= itmax; it++) {
+ 
         tau = tau0 + dt*it;
 
         if (DATA.Initial_profile == 13 || DATA.Initial_profile == 30) {
@@ -126,7 +128,7 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
             if (DATA.output_outofequilibriumsize == 1) {
                 grid_info.OutputEvolution_Knudsen_Reynoldsnumbers(*ap_current,
                                                                   tau);
-            }
+             }
         }
 
         grid_info.output_momentum_anisotropy_vs_tau(
@@ -147,11 +149,17 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
         // check energy conservation
         if (DATA.boost_invariant == 0)
             grid_info.check_conservation_law(*ap_current, *ap_prev, tau);
-        T_max = grid_info.get_maximum_energy_density(*ap_current);
+        grid_info.get_maximum_energy_density(*ap_current);
 
         if (DATA.output_hydro_debug_info == 1) {
             grid_info.monitor_fluid_cell(*ap_current, 100, 100, 0, tau);
         }
+
+	//for (int ieta = 0; ieta < ap_current->nEta(); ieta++)
+	  //for (int ix   = 0; ix   < ap_current->nX();   ix++  )
+	  //	for (int iy   = 0; iy   < ap_current->nY();   iy++  ) {
+	
+	  //	  if (std::isnan((*ap_current)(ix,iy,ieta).epsilon)) {std::cout << "WARNING" << std::endl;}}
 
         /* execute rk steps */
         // all the evolution are at here !!!
@@ -180,12 +188,9 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
                       << " Done time step " << it << "/" << itmax
                       << " tau = " << tau << " fm/c";
         music_message.flush("info");
-        if (frozen == 1) {
-            if (DATA.outputEvolutionData == 0 && DATA.output_movie_flag == 0) {
-                break;
-            } else {
-                if (T_max < DATA.output_evolution_T_cut) break;
-            }
+        if (frozen == 1 && tau > source_tau_max) {
+	  music_message.info("All cells frozen out. Exiting.");
+	  break;
         }
     }
     music_message.info("Finished.");
@@ -239,10 +244,7 @@ int Evolve::FindFreezeOutSurface_Cornelius(double tau,
                 tau, ieta, arena_current, arena_freezeout, thread_id, epsFO);
         }
     }
-
-    if (intersections == 0) {
-        std::cout << "All cells frozen out. Exiting." << std::endl;
-    }
+    
     return(intersections + 1);
 }
 
@@ -255,8 +257,10 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
     const int ny = arena_current.nY();
 
     std::stringstream strs_name;
-    strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
-              << "_" << thread_id << ".dat";
+    //strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
+    //          << "_" << thread_id << ".dat";
+    strs_name << "surface.dat";
+
     std::ofstream s_file;
     std::ios_base::openmode modes;
     
@@ -290,7 +294,7 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
     // initialize Cornelius
     double lattice_spacing[4] = {DTAU, DX, DY, DETA};
     std::shared_ptr<Cornelius> cornelius_ptr(new Cornelius());
-    cornelius_ptr->init(dim, epsFO, lattice_spacing);
+    cornelius_ptr->init(dim, 1.0, lattice_spacing);
 
     // initialize the hyper-cube for Cornelius
     double ****cube = new double*** [2];
@@ -315,22 +319,22 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
 
             // judge intersection (from Bjoern)
             int intersect = 1;
-            if ((arena_current(ix+fac_x,iy+fac_y,ieta+fac_eta).epsilon-epsFO)
-                *(arena_freezeout(ix,iy,ieta).epsilon-epsFO)>0.)
-                if((arena_current(ix+fac_x,iy,ieta).epsilon-epsFO)
-                    *(arena_freezeout(ix,iy+fac_y,ieta+fac_eta).epsilon-epsFO)>0.)
-                    if((arena_current(ix,iy+fac_y,ieta).epsilon-epsFO)
-                        *(arena_freezeout(ix+fac_x,iy,ieta+fac_eta).epsilon-epsFO)>0.)
-                        if((arena_current(ix,iy,ieta+fac_eta).epsilon-epsFO)
-                            *(arena_freezeout(ix+fac_x,iy+fac_y,ieta).epsilon-epsFO)>0.)
-                            if((arena_current(ix+fac_x,iy+fac_y,ieta).epsilon-epsFO)
-                                *(arena_freezeout(ix,iy,ieta+fac_eta).epsilon-epsFO)>0.)
-                                if((arena_current(ix+fac_x,iy,ieta+fac_eta).epsilon-epsFO)
-                                    *(arena_freezeout(ix,iy+fac_y,ieta).epsilon-epsFO)>0.)
-                                    if((arena_current(ix,iy+fac_y,ieta+fac_eta).epsilon-epsFO)
-                                        *(arena_freezeout(ix+fac_x,iy,ieta).epsilon-epsFO)>0.)
-                                        if((arena_current(ix,iy,ieta).epsilon-epsFO)
-                                            *(arena_freezeout(ix+fac_x,iy+fac_y,ieta+fac_eta).epsilon-epsFO)>0.)
+            if ((eos.get_T_ratio(arena_current(ix+fac_x,iy+fac_y,ieta+fac_eta))-1.0)
+		*(eos.get_T_ratio(arena_freezeout(ix,iy,ieta))-1.0)>0.)
+	      if((eos.get_T_ratio(arena_current(ix+fac_x,iy,ieta))-1.0)
+		 *(eos.get_T_ratio(arena_freezeout(ix,iy+fac_y,ieta+fac_eta))-1.0)>0.)
+		if((eos.get_T_ratio(arena_current(ix,iy+fac_y,ieta))-1.0)
+                   *(eos.get_T_ratio(arena_freezeout(ix+fac_x,iy,ieta+fac_eta))-1.0)>0.)
+                        if((eos.get_T_ratio(arena_current(ix,iy,ieta+fac_eta))-1.0)
+                            *(eos.get_T_ratio(arena_freezeout(ix+fac_x,iy+fac_y,ieta))-1.0)>0.)
+			  if((eos.get_T_ratio(arena_current(ix+fac_x,iy+fac_y,ieta))-1.0)
+			      *(eos.get_T_ratio(arena_freezeout(ix,iy,ieta+fac_eta))-1.0)>0.)
+                                if((eos.get_T_ratio(arena_current(ix+fac_x,iy,ieta+fac_eta))-1.0)
+                                    *(eos.get_T_ratio(arena_freezeout(ix,iy+fac_y,ieta))-1.0)>0.)
+				  if((eos.get_T_ratio(arena_current(ix,iy+fac_y,ieta+fac_eta))-1.0)
+                                      *(eos.get_T_ratio(arena_freezeout(ix+fac_x,iy,ieta))-1.0)>0.)
+                                        if((eos.get_T_ratio(arena_current(ix,iy,ieta))-1.0)
+					   *(eos.get_T_ratio(arena_freezeout(ix+fac_x,iy+fac_y,ieta+fac_eta))-1.0)>0.)
                                                 intersect=0;
 
             if (intersect==0) continue;
@@ -345,22 +349,22 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
 
             // if intersect, prepare for the hyper-cube
             intersections++;
-            cube[0][0][0][0] = arena_freezeout(ix      , iy      , ieta        ).epsilon;
-            cube[0][0][1][0] = arena_freezeout(ix      , iy+fac_y, ieta        ).epsilon;
-            cube[0][1][0][0] = arena_freezeout(ix+fac_x, iy      , ieta        ).epsilon;
-            cube[0][1][1][0] = arena_freezeout(ix+fac_x, iy+fac_y, ieta        ).epsilon;
-            cube[1][0][0][0] = arena_current  (ix      , iy      , ieta        ).epsilon;
-            cube[1][0][1][0] = arena_current  (ix      , iy+fac_y, ieta        ).epsilon;
-            cube[1][1][0][0] = arena_current  (ix+fac_x, iy      , ieta        ).epsilon;
-            cube[1][1][1][0] = arena_current  (ix+fac_x, iy+fac_y, ieta        ).epsilon;
-            cube[0][0][0][1] = arena_freezeout(ix      , iy      , ieta+fac_eta).epsilon;
-            cube[0][0][1][1] = arena_freezeout(ix      , iy+fac_y, ieta+fac_eta).epsilon;
-            cube[0][1][0][1] = arena_freezeout(ix+fac_x, iy      , ieta+fac_eta).epsilon;
-            cube[0][1][1][1] = arena_freezeout(ix+fac_x, iy+fac_y, ieta+fac_eta).epsilon;
-            cube[1][0][0][1] = arena_current  (ix      , iy      , ieta+fac_eta).epsilon;
-            cube[1][0][1][1] = arena_current  (ix      , iy+fac_y, ieta+fac_eta).epsilon;
-            cube[1][1][0][1] = arena_current  (ix+fac_x, iy      , ieta+fac_eta).epsilon;
-            cube[1][1][1][1] = arena_current  (ix+fac_x, iy+fac_y, ieta+fac_eta).epsilon;
+            cube[0][0][0][0] = eos.get_T_ratio(arena_freezeout(ix      , iy      , ieta        ));
+            cube[0][0][1][0] = eos.get_T_ratio(arena_freezeout(ix      , iy+fac_y, ieta        ));
+            cube[0][1][0][0] = eos.get_T_ratio(arena_freezeout(ix+fac_x, iy      , ieta        ));
+            cube[0][1][1][0] = eos.get_T_ratio(arena_freezeout(ix+fac_x, iy+fac_y, ieta        ));
+            cube[1][0][0][0] = eos.get_T_ratio(arena_current  (ix      , iy      , ieta        ));
+            cube[1][0][1][0] = eos.get_T_ratio(arena_current  (ix      , iy+fac_y, ieta        ));
+            cube[1][1][0][0] = eos.get_T_ratio(arena_current  (ix+fac_x, iy      , ieta        ));
+            cube[1][1][1][0] = eos.get_T_ratio(arena_current  (ix+fac_x, iy+fac_y, ieta        ));
+            cube[0][0][0][1] = eos.get_T_ratio(arena_freezeout(ix      , iy      , ieta+fac_eta));
+            cube[0][0][1][1] = eos.get_T_ratio(arena_freezeout(ix      , iy+fac_y, ieta+fac_eta));
+            cube[0][1][0][1] = eos.get_T_ratio(arena_freezeout(ix+fac_x, iy      , ieta+fac_eta));
+            cube[0][1][1][1] = eos.get_T_ratio(arena_freezeout(ix+fac_x, iy+fac_y, ieta+fac_eta));
+            cube[1][0][0][1] = eos.get_T_ratio(arena_current  (ix      , iy      , ieta+fac_eta));
+            cube[1][0][1][1] = eos.get_T_ratio(arena_current  (ix      , iy+fac_y, ieta+fac_eta));
+            cube[1][1][0][1] = eos.get_T_ratio(arena_current  (ix+fac_x, iy      , ieta+fac_eta));
+            cube[1][1][1][1] = eos.get_T_ratio(arena_current  (ix+fac_x, iy+fac_y, ieta+fac_eta));
 
     
             // Now, the magic will happen in the Cornelius ...
@@ -877,20 +881,45 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
                     Util::four_dimension_linear_interpolation(
                                 lattice_spacing, x_fraction, cube);
 
+		// energy
+                cube[0][0][0][0] = arena_freezeout(ix      , iy      , ieta        ).epsilon;
+                cube[0][0][1][0] = arena_freezeout(ix      , iy+fac_y, ieta        ).epsilon;
+                cube[0][1][0][0] = arena_freezeout(ix+fac_x, iy      , ieta        ).epsilon;
+                cube[0][1][1][0] = arena_freezeout(ix+fac_x, iy+fac_y, ieta        ).epsilon;
+                cube[1][0][0][0] = arena_current  (ix      , iy      , ieta        ).epsilon;
+                cube[1][0][1][0] = arena_current  (ix      , iy+fac_y, ieta        ).epsilon;
+                cube[1][1][0][0] = arena_current  (ix+fac_x, iy      , ieta        ).epsilon;
+                cube[1][1][1][0] = arena_current  (ix+fac_x, iy+fac_y, ieta        ).epsilon;
+                cube[0][0][0][1] = arena_freezeout(ix      , iy      , ieta+fac_eta).epsilon;
+                cube[0][0][1][1] = arena_freezeout(ix      , iy+fac_y, ieta+fac_eta).epsilon;
+                cube[0][1][0][1] = arena_freezeout(ix+fac_x, iy      , ieta+fac_eta).epsilon;
+                cube[0][1][1][1] = arena_freezeout(ix+fac_x, iy+fac_y, ieta+fac_eta).epsilon;
+                cube[1][0][0][1] = arena_current  (ix      , iy      , ieta+fac_eta).epsilon;
+                cube[1][0][1][1] = arena_current  (ix      , iy+fac_y, ieta+fac_eta).epsilon;
+                cube[1][1][0][1] = arena_current  (ix+fac_x, iy      , ieta+fac_eta).epsilon;
+                cube[1][1][1][1] = arena_current  (ix+fac_x, iy+fac_y, ieta+fac_eta).epsilon;
+                double eps_center = 
+                    Util::four_dimension_linear_interpolation(
+                                lattice_spacing, x_fraction, cube);
+
                 // 4-dimension interpolation done
-                const double TFO = eos.get_temperature(epsFO, rhob_center, proper_tau_center);
+                const double TFO = eos.get_temperature(eps_center, rhob_center, proper_tau_center);
                 if (TFO < 0) {
                     music_message << "TFO=" << TFO
                                   << "<0. ERROR. exiting.";
                     music_message.flush("error");
                     exit(1);
                 }
-                const double muB = eos.get_muB(epsFO, rhob_center, proper_tau_center);
-                const double muS = eos.get_muS(epsFO, rhob_center, proper_tau_center);
-                const double muC = eos.get_muC(epsFO, rhob_center, proper_tau_center);
+                const double muB = eos.get_muB(eps_center, rhob_center, proper_tau_center);
+                const double muS = eos.get_muS(eps_center, rhob_center, proper_tau_center);
+                const double muC = eos.get_muC(eps_center, rhob_center, proper_tau_center);
 
-                const double pressure = eos.get_pressure(epsFO, rhob_center, proper_tau_center);
-                const double eps_plus_p_over_T_FO = (epsFO + pressure)/TFO;
+                const double pressure = eos.get_pressure(eps_center, rhob_center, proper_tau_center);
+                const double eps_plus_p_over_T_FO = (eps_center + pressure)/TFO;
+		const double light_fugacity = eos.get_light_fugacity(proper_tau_center);
+		const double strange_fugacity = eos.get_strange_fugacity(proper_tau_center);
+
+		//tau_file << std::scientific << std::setprecision(10) << proper_tau_center << "  " << x_center << "  " << y_center << std::endl;
 
                 // finally output results !!!!
                 if (surface_in_binary) {
@@ -906,7 +935,7 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
                                      static_cast<float>(ux_center),
                                      static_cast<float>(uy_center),
                                      static_cast<float>(ueta_center),
-                                     static_cast<float>(epsFO),
+                                     static_cast<float>(eps_center),
                                      static_cast<float>(TFO),
                                      static_cast<float>(muB),
                                      static_cast<float>(muS),
@@ -922,13 +951,15 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
                                      static_cast<float>(Wyy_center),
                                      static_cast<float>(Wyeta_center),
                                      static_cast<float>(Wetaeta_center),
+				     static_cast<float>(light_fugacity),
+				     static_cast<float>(strange_fugacity),
                                      static_cast<float>(pi_b_center),
                                      static_cast<float>(rhob_center),
                                      static_cast<float>(qtau_center),
                                      static_cast<float>(qx_center),
                                      static_cast<float>(qy_center),
                                      static_cast<float>(qeta_center)};
-                    for (int i = 0; i < 34; i++) {
+                    for (int i = 0; i < 36; i++) {
                         s_file.write((char*) &(array[i]), sizeof(float));
                     }
                 } else {
@@ -939,7 +970,7 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
                            << FULLSU[2] << " " << FULLSU[3] << " "
                            << utau_center << " " << ux_center << " "
                            << uy_center << " " << ueta_center << " "
-                           << epsFO << " " << TFO << " " << muB << " "
+                           << eps_center << " " << TFO << " " << muB << " "
                            << muS << " " << muC << " "
                            << eps_plus_p_over_T_FO << " "
                            << Wtautau_center << " " << Wtaux_center << " "
@@ -947,7 +978,8 @@ int Evolve::FindFreezeOutSurface_Cornelius_XY(double tau, int ieta,
                            << Wxx_center << " " << Wxy_center << " "
                            << Wxeta_center << " "
                            << Wyy_center << " " << Wyeta_center << " "
-                           << Wetaeta_center << " ";
+                           << Wetaeta_center << " " << light_fugacity << " "
+		           << strange_fugacity << " ";
                     if (DATA.turn_on_bulk)
                         s_file << pi_b_center << " ";
                     if (DATA.turn_on_rhob)
@@ -983,7 +1015,7 @@ int Evolve::FreezeOut_equal_tau_Surface(double tau,
     // this function will be trigged if freezeout_lowtemp_flag == 1
     const int neta = arena_current.nEta();
     const int fac_eta = 1;
-   
+
     for (int i_freezesurf = 0; i_freezesurf < n_freeze_surf; i_freezesurf++) {
         double epsFO = epsFO_list[i_freezesurf]/hbarc;
         if (DATA.boost_invariant == 0) {
@@ -1011,13 +1043,15 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
     const int ny = arena_current.nY();
 
     std::stringstream strs_name;
-    if (DATA.boost_invariant == 0) {
-        strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
-                  << "_" << thread_id << ".dat";
-    } else {
-        strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
-                  << ".dat";
-    }
+    //if (DATA.boost_invariant == 0) {
+    //    strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
+    //              << "_" << thread_id << ".dat";
+    //} else {
+    //    strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
+    //              << ".dat";
+    //}
+    strs_name << "surface.dat";
+    
     std::ofstream s_file;
     std::ios_base::openmode modes;
     
@@ -1043,9 +1077,12 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
     const double DY   = fac_y*DATA.delta_y;
     const double DETA = fac_eta*DATA.delta_eta;
 
+    if (DATA.tau_eq_l == 0 and DATA.tau_eq_s == 0) {epsFO = eos.get_T2e(0.158,0,DATA.tau0);}
+    else {epsFO = eos.get_T2e(0.260,0,DATA.tau0);}
+
     double eta = (DATA.delta_eta)*ieta - (DATA.eta_size)/2.0;
     for (int ix = 0; ix < nx - fac_x; ix += fac_x) {
-        double x = ix*(DATA.delta_x) - (DATA.x_size/2.0); 
+        double x = ix*(DATA.delta_x) - (DATA.x_size/2.0);
         for (int iy = 0; iy < ny - fac_y; iy += fac_y) {
             double y = iy*(DATA.delta_y) - (DATA.y_size/2.0);
 
@@ -1148,7 +1185,11 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
 
             double pressure = eos.get_pressure(e_local, rhob_center, proper_tau_center);
             double eps_plus_p_over_T = (e_local + pressure)/T_local;
-
+            double light_fugacity = eos.get_light_fugacity(proper_tau_center);
+	    double strange_fugacity = eos.get_strange_fugacity(proper_tau_center);
+	    
+	    //tau_file << std::scientific << std::setprecision(10) << proper_tau_center << "  " << x_center << "  " << y_center << std::endl;
+	    
             // finally output results
             if (surface_in_binary) {
                 float array[] = {static_cast<float>(tau_center),
@@ -1179,13 +1220,15 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
                                  static_cast<float>(Wyy_center),
                                  static_cast<float>(Wyeta_center),
                                  static_cast<float>(Wetaeta_center),
+				 static_cast<float>(light_fugacity),
+				 static_cast<float>(strange_fugacity),
                                  static_cast<float>(pi_b_center),
                                  static_cast<float>(rhob_center),
                                  static_cast<float>(qtau_center),
                                  static_cast<float>(qx_center),
                                  static_cast<float>(qy_center),
                                  static_cast<float>(qeta_center)};
-                for (int i = 0; i < 34; i++) {
+                for (int i = 0; i < 36; i++) {
                     s_file.write((char*) &(array[i]), sizeof(float));
                 }
             } else {
@@ -1203,7 +1246,8 @@ void Evolve::FreezeOut_equal_tau_Surface_XY(double tau, int ieta,
                        << Wtauy_center   << " " << Wtaueta_center    << " " 
                        << Wxx_center     << " " << Wxy_center        << " " 
                        << Wxeta_center   << " " << Wyy_center        << " "
-                       << Wyeta_center   << " " << Wetaeta_center    << " " ;
+                       << Wyeta_center   << " " << Wetaeta_center    << " "
+		       << light_fugacity << " " << strange_fugacity  << " ";
                 if (DATA.turn_on_bulk)
                     s_file << pi_b_center << " " ;
                 if (DATA.turn_on_rhob)
@@ -1224,13 +1268,15 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
     const bool surface_in_binary = DATA.freeze_surface_in_binary;
     // find boost-invariant hyper-surfaces
     int *all_frozen = new int[n_freeze_surf];
+
     for (int i_freezesurf = 0; i_freezesurf < n_freeze_surf; i_freezesurf++) {
         double epsFO = epsFO_list[i_freezesurf]/hbarc;
-
+	
         std::stringstream strs_name;
-        strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
-                  << ".dat";
-
+        //strs_name << "surface_eps_" << std::setprecision(4) << epsFO*hbarc
+        //          << ".dat";
+        strs_name << "surface.dat";
+       
         std::ofstream s_file;
         std::ios_base::openmode modes;
 
@@ -1266,11 +1312,11 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
 
         double lattice_spacing[3] = {DTAU, DX, DY};
         double x_fraction[2][3];
-
+	
         // initialize Cornelius
         const int dim = 3;
         std::shared_ptr<Cornelius> cornelius_ptr(new Cornelius());
-        cornelius_ptr->init(dim, epsFO, lattice_spacing);
+        cornelius_ptr->init(dim, 1.0, lattice_spacing);
 
         // initialize the hyper-cube for Cornelius
         double ***cube = new double ** [2];
@@ -1290,15 +1336,26 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                
                 // judge intersection (from Bjoern)
                 intersect=1;
-                if ((arena_current(ix+fac_x,iy+fac_y,0).epsilon-epsFO)
-                    *(arena_freezeout(ix,iy,0).epsilon-epsFO) > 0.)
-                    if ((arena_current(ix+fac_x,iy,0).epsilon-epsFO)
-                        *(arena_freezeout(ix,iy+fac_y,0).epsilon-epsFO) > 0.)
-                        if ((arena_current(ix,iy+fac_y,0).epsilon-epsFO)
-                            *(arena_freezeout(ix+fac_x,iy,0).epsilon-epsFO) > 0.)
-                            if ((arena_current(ix,iy,0).epsilon-epsFO)
-                                *(arena_freezeout(ix+fac_x,iy+fac_y,0).epsilon-epsFO) > 0.)
+		if ((eos.get_T_ratio(arena_current(ix+fac_x,iy+fac_y,0))-1.0)
+		  *(eos.get_T_ratio(arena_freezeout(ix,iy,0))-1.0)>0.)
+	            if((eos.get_T_ratio(arena_current(ix+fac_x,iy,0))-1.0)
+		      *(eos.get_T_ratio(arena_freezeout(ix,iy+fac_y,0))-1.0)>0.)
+		        if((eos.get_T_ratio(arena_current(ix,iy+fac_y,0))-1.0)
+                          *(eos.get_T_ratio(arena_freezeout(ix+fac_x,iy,0))-1.0)>0.)
+			  if((eos.get_T_ratio(arena_current(ix,iy,0))-1.0)
+                            *(eos.get_T_ratio(arena_freezeout(ix+fac_x,iy+fac_y,0))-1.0)>0.)
+
+		// double TFO = eos.get_temperature(epsFO,0,0.6);
+		// if ((eos.get_temperature(arena_current(ix+fac_x,iy+fac_y,0).epsilon,0,0.6)-TFO)
+                //     *(eos.get_temperature(arena_freezeout(ix,iy,0).epsilon,0,0.6)-TFO) > 0.)
+                //     if ((eos.get_temperature(arena_current(ix+fac_x,iy,0).epsilon,0,0.6)-TFO)
+                //         *(eos.get_temperature(arena_freezeout(ix,iy+fac_y,0).epsilon,0,0.6)-TFO) > 0.)
+                //         if ((eos.get_temperature(arena_current(ix,iy+fac_y,0).epsilon,0,0.6)-TFO)
+                //             *(eos.get_temperature(arena_freezeout(ix+fac_x,iy,0).epsilon,0,0.6)-TFO) > 0.)
+                //             if ((eos.get_temperature(arena_current(ix,iy,0).epsilon,0,0.6)-TFO)
+                //                 *(eos.get_temperature(arena_freezeout(ix+fac_x,iy+fac_y,0).epsilon,0,0.6)-TFO) > 0.)
                                     intersect = 0;
+                
                 if (intersect == 0) continue;
 
                 if (ix == 0 || ix >= nx - 2*fac_x
@@ -1308,17 +1365,17 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                     music_message.flush("error");
                     exit(1);
                 }
-
+		
                 // if intersect, prepare for the hyper-cube
                 intersections++;
-                cube[0][0][0] = arena_freezeout(ix      , iy      , 0).epsilon;
-                cube[0][0][1] = arena_freezeout(ix      , iy+fac_y, 0).epsilon;
-                cube[0][1][0] = arena_freezeout(ix+fac_x, iy      , 0).epsilon;
-                cube[0][1][1] = arena_freezeout(ix+fac_x, iy+fac_y, 0).epsilon;
-                cube[1][0][0] = arena_current  (ix      , iy      , 0).epsilon;
-                cube[1][0][1] = arena_current  (ix      , iy+fac_y, 0).epsilon;
-                cube[1][1][0] = arena_current  (ix+fac_x, iy      , 0).epsilon;
-                cube[1][1][1] = arena_current  (ix+fac_x, iy+fac_y, 0).epsilon;
+                cube[0][0][0] = eos.get_T_ratio(arena_freezeout(ix      , iy      , 0));
+                cube[0][0][1] = eos.get_T_ratio(arena_freezeout(ix      , iy+fac_y, 0));
+                cube[0][1][0] = eos.get_T_ratio(arena_freezeout(ix+fac_x, iy      , 0));
+                cube[0][1][1] = eos.get_T_ratio(arena_freezeout(ix+fac_x, iy+fac_y, 0));
+                cube[1][0][0] = eos.get_T_ratio(arena_current  (ix      , iy      , 0));
+                cube[1][0][1] = eos.get_T_ratio(arena_current  (ix      , iy+fac_y, 0));
+		cube[1][1][0] = eos.get_T_ratio(arena_current  (ix+fac_x, iy      , 0));
+                cube[1][1][1] = eos.get_T_ratio(arena_current  (ix+fac_x, iy+fac_y, 0));
            
                 // Now, the magic will happen in the Cornelius ...
                 cornelius_ptr->find_surface_3d(cube);
@@ -1328,8 +1385,9 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                 for (int isurf = 0; isurf < cornelius_ptr->get_Nelements(); 
                      isurf++) {
                     // surface normal vector d^3 \sigma_\mu
-                    for (int ii = 0; ii < dim; ii++)
-                        FULLSU[ii] = cornelius_ptr->get_normal_elem(isurf, ii);
+		  for (int ii = 0; ii < dim; ii++) {
+		    FULLSU[ii] = cornelius_ptr->get_normal_elem(isurf, ii);}
+		    
 
                     FULLSU[3] = 0.0; // rapidity direction is set to 0
 
@@ -1653,6 +1711,7 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                     Wyeta_center   = Wmunu_regulated[2][3];
                     Wetaeta_center = Wmunu_regulated[3][3];
 
+
 		    // proper time
                     cube[0][0][0] = arena_freezeout(ix      , iy      , 0).proper_tau;
                     cube[0][0][1] = arena_freezeout(ix      , iy+fac_y, 0).proper_tau;
@@ -1666,11 +1725,26 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                         Util::three_dimension_linear_interpolation(
                                         lattice_spacing, x_fraction, cube));
 
+		    // energy
+		    cube[0][0][0] = arena_freezeout(ix      , iy      , 0).epsilon;
+		    cube[0][0][1] = arena_freezeout(ix      , iy+fac_y, 0).epsilon;
+		    cube[0][1][0] = arena_freezeout(ix+fac_x, iy      , 0).epsilon;
+		    cube[0][1][1] = arena_freezeout(ix+fac_x, iy+fac_y, 0).epsilon;
+		    cube[1][0][0] = arena_current  (ix      , iy      , 0).epsilon;
+		    cube[1][0][1] = arena_current  (ix      , iy+fac_y, 0).epsilon;
+		    cube[1][1][0] = arena_current  (ix+fac_x, iy      , 0).epsilon;
+		    cube[1][1][1] = arena_current  (ix+fac_x, iy+fac_y, 0).epsilon;
+
+		    double eps_center = (
+		        Util::three_dimension_linear_interpolation(
+				        lattice_spacing, x_fraction, cube));
+
+
 		    // 3-dimension interpolation done
-                    double TFO = eos.get_temperature(epsFO, rhob_center, proper_tau_center);
-                    double muB = eos.get_muB(epsFO, rhob_center, proper_tau_center);
-                    double muS_local = eos.get_muS(epsFO, rhob_center, proper_tau_center);
-                    double muC_local = eos.get_muC(epsFO, rhob_center, proper_tau_center);
+                    double TFO = eos.get_temperature(eps_center, rhob_center, proper_tau_center);
+                    double muB = eos.get_muB(eps_center, rhob_center, proper_tau_center);
+		    double muS_local = eos.get_muS(eps_center, rhob_center, proper_tau_center);
+                    double muC_local = eos.get_muC(eps_center, rhob_center, proper_tau_center);
                     if (TFO < 0) {
                         music_message << "TFO=" << TFO
                                       << "<0. ERROR. exiting.";
@@ -1678,9 +1752,14 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                         exit(1);
                     }
 
-                    double pressure = eos.get_pressure(epsFO, rhob_center, proper_tau_center);
-                    double eps_plus_p_over_T_FO = (epsFO + pressure)/TFO;
+                    double pressure = eos.get_pressure(eps_center, rhob_center, proper_tau_center);
+                    double eps_plus_p_over_T_FO = (eps_center + pressure)/TFO;
+		    double light_fugacity = eos.get_light_fugacity(proper_tau_center);
+		    double strange_fugacity = eos.get_strange_fugacity(proper_tau_center);
+		    
+		    //tau_file << std::scientific << std::setprecision(10) << proper_tau_center << "  " << x_center << "  " << y_center << std::endl;
 
+		    
                     // finally output results !!!!
                     if (surface_in_binary) {
                         float array[] = {static_cast<float>(tau_center),
@@ -1695,7 +1774,7 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                                          static_cast<float>(ux_center),
                                          static_cast<float>(uy_center),
                                          static_cast<float>(ueta_center),
-                                         static_cast<float>(epsFO),
+                                         static_cast<float>(eps_center),
                                          static_cast<float>(TFO),
                                          static_cast<float>(muB),
                                          static_cast<float>(muS_local),
@@ -1711,13 +1790,15 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                                          static_cast<float>(Wyy_center),
                                          static_cast<float>(Wyeta_center),
                                          static_cast<float>(Wetaeta_center),
+					 static_cast<float>(light_fugacity),
+					 static_cast<float>(strange_fugacity),
                                          static_cast<float>(pi_b_center),
                                          static_cast<float>(rhob_center),
                                          static_cast<float>(qtau_center),
                                          static_cast<float>(qx_center),
                                          static_cast<float>(qy_center),
                                          static_cast<float>(qeta_center)};
-                        for (int i = 0; i < 34; i++) {
+                        for (int i = 0; i < 36; i++) {
                             s_file.write((char*) &(array[i]), sizeof(float));
                         }
                     } else {
@@ -1728,7 +1809,7 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                                << FULLSU[2] << " " << FULLSU[3] << " " 
                                << utau_center << " " << ux_center << " " 
                                << uy_center << " " << ueta_center << " " 
-                               << epsFO << " " << TFO << " " << muB << " " 
+                               << eps_center << " " << TFO << " " << muB << " " 
                                << muS_local << " " << muC_local << " "
                                << eps_plus_p_over_T_FO << " " 
                                << Wtautau_center << " " << Wtaux_center << " " 
@@ -1736,7 +1817,8 @@ int Evolve::FindFreezeOutSurface_boostinvariant_Cornelius(
                                << Wxx_center << " " << Wxy_center << " " 
                                << Wxeta_center << " " 
                                << Wyy_center << " " << Wyeta_center << " " 
-                               << Wetaeta_center << " " ;
+                               << Wetaeta_center << " " << light_fugacity << " "
+			       << strange_fugacity << " ";
                         if(DATA.turn_on_bulk)   // 29th column
                             s_file << pi_b_center << " " ;
                         if(DATA.turn_on_rhob)   // 30th column
@@ -1818,7 +1900,7 @@ void Evolve::regulate_Wmunu(const double u[], const double Wmunu[4][4],
 
 void Evolve::initialize_freezeout_surface_info() {
     if (DATA.useEpsFO == 0) {
-        const double e_freeze = eos.get_T2e(DATA.TFO, 0.0, 0.0)*Util::hbarc;
+        const double e_freeze = eos.get_T2e(DATA.TFO, 0.0, 1e10)*Util::hbarc;
         n_freeze_surf = 1;
         for (int isurf = 0; isurf < n_freeze_surf; isurf++) {
             epsFO_list.push_back(e_freeze);

@@ -19,7 +19,7 @@ using std::vector;
 
 MUSIC::MUSIC(std::string input_file) :
     DATA(ReadInParameters::read_in_parameters(input_file)),
-    eos(DATA.whichEOS) {
+    eos(DATA) {
 
     mode                   = DATA.mode;
     flag_hydro_run         = 0;
@@ -85,11 +85,13 @@ void MUSIC::initialize_hydro() {
 
 //! this is a shell function to run hydro
 int MUSIC::run_hydro() {
-    Evolve evolve_local(eos, DATA, hydro_source_terms_ptr);
 
+    Evolve evolve_local(eos, DATA, hydro_source_terms_ptr);
+      
     if (hydro_info_ptr == nullptr && DATA.store_hydro_info_in_memory == 1) {
         hydro_info_ptr = std::make_shared<HydroinfoMUSIC> ();
     }
+
     evolve_local.EvolveIt(arena_prev, arena_current, arena_future,
                           (*hydro_info_ptr));
     flag_hydro_run = 1;

@@ -10,7 +10,7 @@
 using std::stringstream;
 using std::string;
 
-EOS_PCE::EOS_PCE() {
+EOS_PCE::EOS_PCE(const InitData &DATA_in) : DATA(DATA_in) {
     set_EOS_id(18);
     set_number_of_tables(0);
     set_eps_max(1e5);
@@ -32,25 +32,36 @@ void EOS_PCE::initialize_eos() {
     music_message << "from path " << path;
     music_message.flush("info");
    
-    set_number_of_tables(2);
+    set_number_of_tables(4);
     resize_table_info_arrays();
 
     int ntables = get_number_of_tables();
 
     pressure_tb    = new double** [ntables];
     energy_tb      = new double** [ntables]; 
-    cs2_tb         = new double** [ntables];
-
-    std::ifstream qcd_eos(path + "/hrg_hotqcd_eos_binary.dat", std::ios::binary);
-    std::ifstream gluon_eos(path + "/gluon_eos_binary.dat", std::ios::binary);
+    entropy_tb     = new double** [ntables];
+    temperature_tb = new double** [ntables];
+    
+    std::ifstream qcd_eos(path + "/QGP_eos_Vovchenko_Tspacing.dat", std::ios::binary);
+    std::ifstream gluon_eos(path + "/gluon_eos_binary_Tspacing.dat", std::ios::binary);
+    std::ifstream qcd_eos_espacing(path + "/QGP_eos_Vovchenko_e0p25spacing.dat", std::ios::binary); // For fast T(e) lookup
+    std::ifstream gluon_eos_espacing(path + "/gluon_eos_binary_e0p25spacing.dat", std::ios::binary); 
     
     for (int itable = 0; itable < ntables; itable++) { // 0 = QCD, 1 = gluon
         std::ifstream* eos_file;
-	if (itable == 0) {
-	  eos_file = &qcd_eos;
-	}
-	else {
-	  eos_file = &gluon_eos;
+        switch(itable) {
+	    case 0:
+	         eos_file = &qcd_eos;
+		 break;
+	    case 1:
+	         eos_file = &gluon_eos;
+		 break;
+            case 2:
+	         eos_file = &qcd_eos_espacing;
+                 break;
+	    case 3:
+	         eos_file = &gluon_eos_espacing;
+                 break;
 	}
 
         if (!*eos_file) {
@@ -61,35 +72,63 @@ void EOS_PCE::initialize_eos() {
         e_length[itable]  = 100000;
         nb_length[itable] = 1;
         // allocate memory for pressure arrays
-        pressure_tb[itable] = Util::mtx_malloc(nb_length[itable],
+	if (itable == 0 or itable == 1) {
+            pressure_tb[itable] = Util::mtx_malloc(nb_length[itable],
                                                e_length[itable]);
-        energy_tb[itable] = Util::mtx_malloc(nb_length[itable],
+            energy_tb[itable] = Util::mtx_malloc(nb_length[itable],
                                                   e_length[itable]);
-	cs2_tb[itable] = Util::mtx_malloc(nb_length[itable], e_length[itable]);
-        double temp;
-        for (int ii = 0; ii < e_length[itable]; ii++) {
-	    eos_file->read((char*)&temp, sizeof(double));  // e
-            energy_tb[itable][0][ii] = temp/Util::hbarc;      // 1/fm^4
-	    //    if (ii == 0) e_bounds[itable] = temp;
-            //    if (ii == 1) e_spacing[itable] = temp - e_bounds[itable];
-            if (ii == e_length[itable] - 1) set_eps_max(temp/Util::hbarc);
-	    
+	    entropy_tb[itable] = Util::mtx_malloc(nb_length[itable], e_length[itable]);
+	
+            double temp;
+            for (int ii = 0; ii < e_length[itable]; ii++) {
+	        eos_file->read((char*)&temp, sizeof(double));  // e
+                energy_tb[itable][0][ii] = temp/Util::hbarc;      // 1/fm^4
+	        //    if (ii == 0) e_bounds[itable] = temp;
+                //    if (ii == 1) e_spacing[itable] = temp - e_bounds[itable];
+                if (ii == e_length[itable] - 1) set_eps_max(std::max(get_eps_max(),temp/Util::hbarc));
 
-            eos_file->read((char*)&temp, sizeof(double));  // P
-            pressure_tb[itable][0][ii] = temp/Util::hbarc;      // 1/fm^4
+                eos_file->read((char*)&temp, sizeof(double));  // P
+                pressure_tb[itable][0][ii] = temp/Util::hbarc;      // 1/fm^4
 
-            eos_file->read((char*)&temp, sizeof(double));  // s
+                eos_file->read((char*)&temp, sizeof(double));  // s
+	        entropy_tb[itable][0][ii] = temp;
 
-            eos_file->read((char*)&temp, sizeof(double));  // T
-            if (ii == 0) e_bounds[itable] = temp/Util::hbarc;   // 1/fm
-	    if (ii == 1) e_spacing[itable] = temp/Util::hbarc - e_bounds[itable];
-	    if (ii == e_length[itable] -1) set_T_max(temp/Util::hbarc);
-
-	    eos_file->read((char*)&temp, sizeof(double));  // cs2
-	    cs2_tb[itable][0][ii] = temp;
+                eos_file->read((char*)&temp, sizeof(double));  // T
+                if (ii == 0) e_bounds[itable] = temp/Util::hbarc;   // 1/fm
+	        if (ii == 1) e_spacing[itable] = temp/Util::hbarc - e_bounds[itable];
+	        if (ii == e_length[itable] -1) set_T_max(std::max(T_max,temp/Util::hbarc));
+	    }
         }
+	
+	else {
+            pressure_tb[itable] = Util::mtx_malloc(nb_length[itable],
+                                               e_length[itable]);
+            temperature_tb[itable] = Util::mtx_malloc(nb_length[itable],
+                                                  e_length[itable]);
+	    entropy_tb[itable] = Util::mtx_malloc(nb_length[itable], e_length[itable]);
+
+            double temp;
+            for (int ii = 0; ii < e_length[itable]; ii++) {
+	        eos_file->read((char*)&temp, sizeof(double));  // e^(1/4) (1/fm)
+                //temp /= Util::hbarc;      // 1/fm^4
+                if (ii == 0) e_bounds[itable] = temp;
+                if (ii == 1) e_spacing[itable] = temp - e_bounds[itable];
+                if (ii == e_length[itable] - 1) set_eps_max(std::max(get_eps_max(),std::pow(temp,4)));
+
+                eos_file->read((char*)&temp, sizeof(double));  // P
+                pressure_tb[itable][0][ii] = temp/Util::hbarc;      // 1/fm^4
+
+                eos_file->read((char*)&temp, sizeof(double));  // s
+	        entropy_tb[itable][0][ii] = temp;                   // 1/fm^3
+
+                eos_file->read((char*)&temp, sizeof(double));  // T
+                temperature_tb[itable][0][ii] = temp/Util::hbarc;   // 1/fm
+
+	        eos_file->read((char*)&temp, sizeof(double));  // cs2
+	    }
+	}
     }
-    std::cout << e_bounds[0] << " " << e_spacing[0] << " " << e_bounds[1] << " " << e_spacing[1] << std::endl;
+    //std::cout << e_bounds[0] << " " << e_spacing[0] << " " << e_bounds[1] << " " << e_spacing[1] << std::endl;
     music_message.info("Done reading EOS.");
 }
 
@@ -103,9 +142,11 @@ double EOS_PCE::p_e_func(double e, double rhob, double proper_tau) const {
 //! input local energy density eps [1/fm^4] and rhob [1/fm^3]
 // Uses binary search as in get_T2e_finite_rhob - Andrew
 double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const {
-    double e_goal = e/Util::hbarc;         // convert to 1/fm^4
-    double T_lower = 1e-15;  
-    double T_upper = T_max;
+    double e_goal = e;         // convert to 1/fm^4
+    double T_QCD = interpolate1D(std::pow(e,0.25), 2, temperature_tb);  // 1/fm
+    double T_gluon = interpolate1D(std::pow(e,0.25), 3, temperature_tb);
+    double T_lower = std::min(T_QCD,T_gluon);//1e-15;  
+    double T_upper = std::max(T_QCD,T_gluon);//T_max;
     double T_mid  = (T_upper + T_lower)/2.;
     double e_lower   = get_T2e(T_lower, rhob, proper_tau);
     double e_upper   = 10*get_T2e(T_upper, rhob, proper_tau);
@@ -120,8 +161,8 @@ double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const 
     
     if (e_goal < e_lower) return(T_lower);
 
-    double rel_accuracy = 1e-8;
-    double abs_accuracy = 1e-15;
+    double rel_accuracy = 1e-15;
+    double abs_accuracy = 1e-8;
     double e_mid;
     int iter = 0;
     while (((T_upper - T_lower)/T_mid > rel_accuracy
@@ -136,12 +177,12 @@ double EOS_PCE::get_temperature(double e, double rhob, double proper_tau) const 
     }
     if (iter == ntol) {
         std::cout << "get_temperature:: max iteration reached, "
-	     	  << "e = " << e << ", rhob = " << rhob << std::endl;;
-	std::cout << "e_upper = " << e_upper*Util::hbarc
-		  << " , e_lower = " << e_lower*Util::hbarc << std::endl;
-	std::cout << "T_upper = " << T_upper
+    	     	  << "e = " << e << ", rhob = " << rhob << std::endl;;
+    	std::cout << "e_upper = " << e_upper*Util::hbarc
+    		  << " , e_lower = " << e_lower*Util::hbarc << std::endl;
+    	std::cout << "T_upper = " << T_upper
                   << " , T_lower = " << T_lower
-		  << ", diff = " << (T_upper - T_lower) << std::endl;
+    		  << ", diff = " << (T_upper - T_lower) << std::endl;
         exit(1);
     }
     return (T_mid);
@@ -175,22 +216,35 @@ double EOS_PCE::get_T2e(double T, double rhob, double proper_tau) const {
 
 double EOS_PCE::get_fugacity(double proper_tau) const {
     double fugacity;
-    double tau0 = 0;
-    double tau_eq = 5.0;
-    if (tau0 <= 0) {
+    double tau0 = DATA.tau0;
+    double tau_eq = DATA.tau_eq;
+    if (tau0 <= 0 or tau_eq <= 0) {
         fugacity = 1;
     }
     else {
         fugacity = 1 - exp((tau0 - proper_tau)/tau_eq);
+	if (fugacity < 0) return(0);
     }
     return(fugacity);
 }
 
-double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
+// double EOS_PCE::get_cs2(double e, double rhob, double proper_tau) const {
+//     double T = get_temperature(e, rhob, proper_tau);
+//     double cs2_QCD = interpolate1D(T, 0, cs2_tb);  // 1/fm
+//     double cs2_gluon = interpolate1D(T, 1, cs2_tb);
+//     double fugacity = get_fugacity(proper_tau);
+//     double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
+//     return(std::max(1e-15, cs2));
+// }
+
+double EOS_PCE::get_entropy(double e, double rhob, double proper_tau) const {
     double T = get_temperature(e, rhob, proper_tau);
-    double cs2_QCD = interpolate1D(T, 0, cs2_tb);  // 1/fm
-    double cs2_gluon = interpolate1D(T, 1, cs2_tb);
+    double P_QCD = interpolate1D(T, 0, pressure_tb);
+    double P_gluon = interpolate1D(T, 1, pressure_tb);
+    double entropy_QCD = interpolate1D(T, 0, entropy_tb);
+    double entropy_gluon = interpolate1D(T, 1, entropy_tb);
     double fugacity = get_fugacity(proper_tau);
-    double cs2 = fugacity * cs2_QCD + (1 - fugacity) * cs2_gluon;
-    return(std::max(1e-15, cs2));
+    //entropy_QCD = (e + get_pressure(e, rhob, proper_tau))/(get_temperature(e, rhob, proper_tau));
+    double entropy = fugacity * entropy_QCD + (1 - fugacity) * entropy_gluon - fugacity*log(fugacity)/T * (P_QCD - P_gluon);
+    return(std::max(1e-15,entropy));
 }

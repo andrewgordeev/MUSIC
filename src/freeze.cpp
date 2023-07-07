@@ -464,7 +464,7 @@ void Freeze::ReadParticleData(InitData *DATA, EOS *eos) {
     }
     decayMax = j;
     fclose(p_file);
-    music_message << "Read in particle spicies " << i;
+    music_message << "Read in particle species " << i;
     music_message.flush("info");
     DATA->NumberOfParticlesToInclude = i;
 
@@ -548,13 +548,16 @@ void Freeze::ReadFreezeOutSurface(InitData *DATA) {
             temp_cell.W[2][3] = array[26];
             temp_cell.W[3][3] = array[27];
 
-            temp_cell.pi_b  = array[28];
-            temp_cell.rho_B = array[29];
+	    temp_cell.light_fugacity = array[28];
+	    temp_cell.strange_fugacity = array[29];
+	   
+            temp_cell.pi_b  = array[30];
+            temp_cell.rho_B = array[31];
 
-            temp_cell.q[0] = array[30];
-            temp_cell.q[1] = array[31];
-            temp_cell.q[2] = array[32];
-            temp_cell.q[3] = array[33];
+            temp_cell.q[0] = array[32];
+            temp_cell.q[1] = array[33];
+            temp_cell.q[2] = array[34];
+            temp_cell.q[3] = array[35];
         } else {
             // position in (tau, x, y, eta)
             surfdat >> temp_cell.x[0] >> temp_cell.x[1]
@@ -578,9 +581,12 @@ void Freeze::ReadFreezeOutSurface(InitData *DATA) {
                     >> temp_cell.W[1][1] >> temp_cell.W[1][2]
                     >> temp_cell.W[1][3] >> temp_cell.W[2][2]
                     >> temp_cell.W[2][3] >> temp_cell.W[3][3];
+
+	    surfdat >> temp_cell.light_fugacity >> temp_cell.strange_fugacity;
+	    
             if (DATA->turn_on_bulk) {
                 surfdat >> temp_cell.pi_b;
-            } else {
+	    } else {
                 temp_cell.pi_b = 0.;
             }
             if (DATA->turn_on_rhob) {
@@ -602,6 +608,7 @@ void Freeze::ReadFreezeOutSurface(InitData *DATA) {
         temp_cell.cosh_eta_s = cosh(temp_cell.x[3]);
 
         if (temp_cell.epsilon_f < 0)  {
+	  std::cout << temp_cell.epsilon_f << " " << temp_cell.T_f << std::endl;
             music_message.error("epsilon_f < 0.!");
             exit(1);
         }

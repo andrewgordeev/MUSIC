@@ -327,7 +327,21 @@ InitData read_in_parameters(std::string input_file) {
         istringstream(tempinput) >> temptau0;
     parameter_list.tau0 = temptau0;
 
-        // Initial temperature for Bjorken initial conditions (GeV)
+
+    // PCE equilibration times: in fm
+    double temptau_eq_l = 0;
+    tempinput = Util::StringFind4(input_file, "Light_quark_equilibration_time");
+    if (tempinput != "empty")
+        istringstream(tempinput) >> temptau_eq_l;
+    parameter_list.tau_eq_l = temptau_eq_l;
+
+    double temptau_eq_s = 0;
+    tempinput = Util::StringFind4(input_file, "Strange_quark_equilibration_time");
+    if (tempinput != "empty")
+        istringstream(tempinput) >> temptau_eq_s;
+    parameter_list.tau_eq_s = temptau_eq_s;
+    
+    // Initial temperature for Bjorken initial conditions (GeV)
     double tempT_init   = .4;
     tempinput = Util::StringFind4(input_file, "T_init_in_GeV");
     if (tempinput != "empty") istringstream ( tempinput ) >> tempT_init  ;
@@ -615,6 +629,14 @@ InitData read_in_parameters(std::string input_file) {
     if (tempinput != "empty")
         istringstream ( tempinput ) >> temp_eta_over_s_at_kink;
     parameter_list.eta_over_s_at_kink = temp_eta_over_s_at_kink;
+
+    // the strength for the viscous regulation
+    double temp_quest_revert_strength = 10.;
+    tempinput = Util::StringFind4(input_file, "quest_revert_strength");
+    if (tempinput != "empty") {
+        istringstream(tempinput) >> temp_quest_revert_strength;
+    }
+    parameter_list.quest_revert_strength = temp_quest_revert_strength;
 
     // Include_Bulk_Visc_Yes_1_No_0
     int tempturn_on_bulk = 0;

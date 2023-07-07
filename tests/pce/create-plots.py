@@ -20,11 +20,11 @@ vzvals = np.array([])
 
 xmax = 15.0
 ymax = 15.0
-t0 = 0.4
-tmax = t0+0.025
+t0 = 0.6
+tmax = t0+0.15
 dx = 0.06*5
 dy = 0.06*5
-dt = 0.025*1
+dt = 0.025*10
 
 
 with open(results_file, 'r') as f:
@@ -52,42 +52,42 @@ rvals = np.sqrt(xvals**2 + yvals**2)
 
 """ Comparing to OSU-hydro data """
 
-surface = np.fromfile('../../../osu-hydro-pce/test/surface.dat', dtype='f8').reshape(-1, 8)
+# surface = np.fromfile('../../../osu-hydro-pce/test/surface.dat', dtype='f8').reshape(-1, 8)
 
-OSUresults = dict(
-    zip(['x','v'], np.hsplit(surface, [3,5])),
-    #pi=dict(zip(['xx','xy','yy'],surface.T[11:14])),
-    #Pi=surface.T[15],
-    Temp = surface.T[5],
-    ed = surface.T[6],
-    Tprop=surface.T[7])#,
-   # sd = surface.T[19],
-   # intersect = surface.T[20])
+# OSUresults = dict(
+#     zip(['x','v'], np.hsplit(surface, [3,5])),
+#     #pi=dict(zip(['xx','xy','yy'],surface.T[11:14])),
+#     #Pi=surface.T[15],
+#     Temp = surface.T[5],
+#     ed = surface.T[6],
+#     Tprop=surface.T[7])#,
+#    # sd = surface.T[19],
+#    # intersect = surface.T[20])
 
-OSUtvals = OSUresults['x'][:,0]
-OSUxvals = OSUresults['x'][:,1]
-OSUyvals = OSUresults['x'][:,2]
-OSUrvals = np.sqrt(OSUxvals**2 + OSUyvals**2)
-OSUtempvals = 1000*OSUresults['Temp']
-OSUevals = OSUresults['ed']
-OSUTpropvals = OSUresults['Tprop']
-OSUvvals = np.sqrt((OSUresults['v']**2).sum(axis=1))
-OSUpvals = OSUevals # Placeholder!
+# OSUtvals = OSUresults['x'][:,0]
+# OSUxvals = OSUresults['x'][:,1]
+# OSUyvals = OSUresults['x'][:,2]
+# OSUrvals = np.sqrt(OSUxvals**2 + OSUyvals**2)
+# OSUtempvals = 1000*OSUresults['Temp']
+# OSUevals = OSUresults['ed']
+# OSUTpropvals = OSUresults['Tprop']
+# OSUvvals = np.sqrt((OSUresults['v']**2).sum(axis=1))
+# OSUpvals = OSUevals # Placeholder!
 
-plt.rcdefaults()
-plt.style.use(['seaborn-darkgrid', 'seaborn-deep', 'seaborn-notebook'])
-plt.rcParams.update({
-    'lines.linewidth': 1.5,
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['Lato'],
-    'mathtext.fontset': 'custom',
-    'mathtext.default': 'it',
-    'mathtext.rm': 'sans',
-    'mathtext.it': 'sans:italic:medium',
-    'mathtext.cal': 'sans',
-    'pdf.fonttype': 42,
-})
-plt.figure(figsize=(7,5))
+# plt.rcdefaults()
+# plt.style.use(['seaborn-darkgrid', 'seaborn-deep', 'seaborn-notebook'])
+# plt.rcParams.update({
+#     'lines.linewidth': 1.5,
+#     'font.family': 'sans-serif',
+#     'font.sans-serif': ['Lato'],
+#     'mathtext.fontset': 'custom',
+#     'mathtext.default': 'it',
+#     'mathtext.rm': 'sans',
+#     'mathtext.it': 'sans:italic:medium',
+#     'mathtext.cal': 'sans',
+#     'pdf.fonttype': 42,
+# })
+# plt.figure(figsize=(7,5))
 
 """ Initial condition tests """
 #ic = np.fromfile('ed.dat').reshape(grid_n + 1, grid_n + 1)
@@ -230,8 +230,8 @@ t = np.linspace(0, 10, 50)
     
 """ Plot of energy density in central cell: """
 ### Saved to plots/CentralCell.png
-# plt.xlabel(r'$\tau$ (fm/c)'$)
-# plt.ylabel(r'$\epsilon (GeV/fm^3)$')
+# plt.xlabel(r'$\tau$ (fm/c)')
+# plt.ylabel(r'$\epsilon (GeV/fm^3)')
 # rvals_original = rvals
 # rvals = rvals[rvals<2*grid_step]
 # tvals = tvals[rvals_original<2*grid_step]

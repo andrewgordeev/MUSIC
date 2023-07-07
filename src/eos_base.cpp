@@ -8,6 +8,7 @@
 #include <fstream>
 
 using std::ostringstream;
+
 using std::setw;
 using std::setprecision;
 using std::scientific;
@@ -23,11 +24,18 @@ EOS_base::~EOS_base() {
                        nb_length[itable], e_length[itable]);
         Util::mtx_free(temperature_tb[itable],
                        nb_length[itable], e_length[itable]);
+	Util::mtx_free(cs2_tb[itable], nb_length[itable], e_length[itable]);
     }
     if (number_of_tables > 0) {
         delete[] pressure_tb;
         delete[] temperature_tb;
+	delete[] cs2_tb;
     }
+
+    gsl_spline_free(pressure_spline);
+    gsl_spline_free(temperature_spline);
+    gsl_spline_free(cs2_spline);
+    gsl_interp_accel_free(acc);
 }
 
 
@@ -56,12 +64,13 @@ double EOS_base::interpolate1D(double e, int table_idx, double ***table) const {
     const double frac_e = (local_ed - (idx_e*delta_e + e0))/delta_e;
 
     double result;
-    
+      
     double temp1 = table[table_idx][0][idx_e];
     double temp2 = table[table_idx][0][idx_e + 1];
+
     result = temp1*(1. - frac_e) + temp2*frac_e;
-    //    std::cout << "Spacing: " << table_idx << "  " << e0 << "  " << delta_e << "  " << N_e << std::endl;
-    //   std::cout << "Interpolate1D: " << table_idx << "  " << e << "  " << result << "  " << get_eps_max() << std::endl; 
+    
+    //std::cout << "INTERP: e = " << e << ", idx = " << table_idx << ", temp1 = " << temp1 << ", temp2 = " << temp2 << ", frac_e = " << frac_e << std::endl;
     return(result);
 }
 
@@ -75,19 +84,17 @@ double EOS_base::interpolate2D(double e, double rhob, int table_idx, double ***t
     //double local_ed = e*hbarc;  // [GeV/fm^3]
     double local_ed = e;
     double local_nb = rhob;     // [1/fm^3]
-
     double e0       = e_bounds[table_idx];
     double nb0      = nb_bounds[table_idx];
     double delta_e  = e_spacing[table_idx];
     double delta_nb = nb_spacing[table_idx];
-
     int N_e  = e_length[table_idx];
     int N_nb = nb_length[table_idx];
 
     // compute the indices
     int idx_e  = static_cast<int>((local_ed - e0)/delta_e);
     int idx_nb = static_cast<int>((local_nb - nb0)/delta_nb);
-
+   
     // treatment for overflow, use the last two points to do extrapolation
     idx_e  = std::min(N_e - 2, idx_e);
     idx_nb = std::min(N_nb - 2, idx_nb);
@@ -102,10 +109,66 @@ double EOS_base::interpolate2D(double e, double rhob, int table_idx, double ***t
     double result;
     double temp1 = table[table_idx][idx_nb][idx_e];
     double temp2 = table[table_idx][idx_nb][idx_e + 1];
-    double temp3 = table[table_idx][idx_nb + 1][idx_e + 1];
-    double temp4 = table[table_idx][idx_nb + 1][idx_e];
+    double temp3 = table[table_idx][idx_nb+1][idx_e + 1];
+    double temp4 = table[table_idx][idx_nb+1][idx_e];
+
     result = ((temp1*(1. - frac_e) + temp2*frac_e)*(1. - frac_rhob)
               + (temp3*frac_e + temp4*(1. - frac_e))*frac_rhob);
+   
+    return(result);
+}
+
+double EOS_base::interpolate3D(double e, double fugl, double fugs, double ***table) const {
+// This is a generic trilinear interpolation routine for the PCE EOS
+    double local_ed = e;
+    double local_fugl = fugl;
+    double local_fugs = fugs;    
+    double e0       = e_bounds[0];
+    double fugl0      = fugl_bounds[0];
+    double fugs0      = fugs_bounds[0];
+    
+    double delta_e  = e_spacing[0];
+    double delta_fugl = fugl_spacing[0];
+    double delta_fugs = fugs_spacing[0];
+    
+    int N_e  = e_length[0];
+    int N_fugl = fugl_length[0];
+    int N_fugs = fugs_length[0];
+    
+    // compute the indices
+    int idx_e  = static_cast<int>((local_ed - e0)/delta_e);
+    int idx_fugl = static_cast<int>((local_fugl - fugl0)/delta_fugl);
+    int idx_fugs = static_cast<int>((local_fugs - fugs0)/delta_fugs);
+   
+    // treatment for overflow, use the last two points to do extrapolation
+    idx_e  = std::min(N_e - 2, idx_e);
+    idx_fugl = std::min(N_fugl - 2, idx_fugl);
+    idx_fugs = std::min(N_fugs - 2, idx_fugs);
+
+    // check underflow
+    idx_e  = std::max(0, idx_e);
+    idx_fugl = std::max(0, idx_fugl);
+    idx_fugs = std::max(0, idx_fugs);
+
+    double frac_e    = (local_ed - (idx_e*delta_e + e0))/delta_e;
+    double frac_fugl = (local_fugl - (idx_fugl*delta_fugl + fugl0))/delta_fugl;
+    double frac_fugs = (local_fugs - (idx_fugs*delta_fugs + fugs0))/delta_fugs;
+
+    double result;
+    double temp1 = table[idx_fugs][idx_fugl][idx_e];
+    double temp2 = table[idx_fugs][idx_fugl][idx_e + 1];
+    double temp3 = table[idx_fugs+1][idx_fugl][idx_e];
+    double temp4 = table[idx_fugs+1][idx_fugl][idx_e+1];
+    double temp5 = table[idx_fugs][idx_fugl+1][idx_e];
+    double temp6 = table[idx_fugs][idx_fugl+1][idx_e+1];
+    double temp7 = table[idx_fugs+1][idx_fugl+1][idx_e];
+    double temp8 = table[idx_fugs+1][idx_fugl+1][idx_e+1];
+
+    result = ((temp1*(1. - frac_e) + temp2*frac_e) * (1. - frac_fugs) + (temp3*(1. - frac_e) + temp4*frac_e) * frac_fugs) * (1. - frac_fugl)
+      + ((temp5*(1. - frac_e) + temp6*frac_e) * (1. - frac_fugs) + (temp7*(1. - frac_e) + temp8*frac_e) * frac_fugs) * frac_fugl;
+
+    // result = interpolate2D(e, fugl, 0, table);
+   
     return(result);
 }
 
@@ -133,12 +196,14 @@ double EOS_base::get_cs2(double e, double rhob, double proper_tau) const {
 
 double EOS_base::calculate_velocity_of_sound_sq(double e, double rhob, double proper_tau) const {
     double v_min = 0.01;
-    double v_max = 1./3;
+    double v_max = 1./3-1e-5;
+
     double dpde = p_e_func(e, rhob, proper_tau);
     double dpdrho = p_rho_func(e, rhob, proper_tau);
     double pressure = get_pressure(e, rhob, proper_tau);
     double v_sound = dpde + rhob/(e + pressure + 1e-15)*dpdrho;
     v_sound = std::max(v_min, std::min(v_max, v_sound));
+    
     return(v_sound);
 }
 
@@ -151,6 +216,7 @@ double EOS_base::get_dpOverde3(double e, double rhob, double proper_tau) const {
    double pR = get_pressure(eRight, rhob, proper_tau);  // 1/fm^4
       
    double dpde = (pR - pL)/(eRight - eLeft);
+
    return dpde;
 }
 
@@ -297,6 +363,12 @@ void EOS_base::resize_table_info_arrays() {
     e_bounds.resize(number_of_tables, 0.0);
     e_spacing.resize(number_of_tables, 0.0);
     e_length.resize(number_of_tables, 0);
+    fugl_bounds.resize(number_of_tables, 0.0);
+    fugl_spacing.resize(number_of_tables, 0.0);
+    fugl_length.resize(number_of_tables, 0);
+    fugs_bounds.resize(number_of_tables, 0.0);
+    fugs_spacing.resize(number_of_tables, 0.0);
+    fugs_length.resize(number_of_tables, 0);
 }
 
 

@@ -140,6 +140,7 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
         out_file_bulkpi_xyeta = fopen(out_name_bulkpi_xyeta.c_str(),
                                       out_open_mode.c_str());
     }
+   
     if (DATA.turn_on_diff == 1) {
         out_file_q_xyeta = fopen(out_name_q_xyeta.c_str(),
                                  out_open_mode.c_str());
@@ -147,6 +148,7 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
     const int n_skip_x   = DATA.output_evolution_every_N_x;
     const int n_skip_y   = DATA.output_evolution_every_N_y;
     const int n_skip_eta = DATA.output_evolution_every_N_eta;
+
     for (int ieta = 0; ieta < arena.nEta(); ieta += n_skip_eta) {
         double eta = 0.0;
         if (DATA.boost_invariant == 0) {
@@ -157,10 +159,12 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
         double sinh_eta = sinh(eta);
         for (int iy = 0; iy < arena.nY(); iy += n_skip_y) {
             for (int ix = 0; ix < arena.nX(); ix += n_skip_x) {
+
                 double e_local    = arena(ix, iy, ieta).epsilon;  // 1/fm^4
                 double rhob_local = arena(ix, iy, ieta).rhob;     // 1/fm^3
 		double proper_tau = arena(ix, iy, ieta).proper_tau; //fm
                 double p_local = eos.get_pressure(e_local, rhob_local, proper_tau);
+		double s_local = eos.get_entropy(e_local, rhob_local, proper_tau);	
                 double utau = arena(ix, iy, ieta).u[0];
                 double ux   = arena(ix, iy, ieta).u[1];
                 double uy   = arena(ix, iy, ieta).u[2];
@@ -175,7 +179,7 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
                 double cs2_local = eos.get_cs2(e_local, rhob_local, proper_tau);
                 double muB_local = eos.get_muB(e_local, rhob_local, proper_tau);
                 double enthropy  = e_local + p_local;  // [1/fm^4]
-
+ 	
                 double Wtautau = 0.0;
                 double Wtaux   = 0.0;
                 double Wtauy   = 0.0;
@@ -219,11 +223,13 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
                     qy   = arena(ix, iy, ieta).Wmunu[12]/kappa_hat;
                     qeta = arena(ix, iy, ieta).Wmunu[13]/kappa_hat;
                 }
-
+    
                 // exclude the actual coordinates from the output to save space:
                 if (DATA.outputBinaryEvolution == 0) {
-                    fprintf(out_file_xyeta, "%e %e %e %e %e %e %e %e\n",
-                            T_local*hbarc, e_local*hbarc, muB_local*hbarc, vx, vy, vz, proper_tau, p_local*hbarc);
+		  //fprintf(out_file_xyeta, "%e %e %e %e %e \n",
+		  //        T_local*hbarc, muB_local*hbarc, vx, vy, vz);
+		  fprintf(out_file_xyeta, "%e %e %e %e %e %e %e %e \n",
+			  T_local*hbarc, e_local*hbarc, s_local, vx, vy, vz, proper_tau, p_local);
                     if (DATA.viscosity_flag == 1) {
                         if (DATA.turn_on_shear) {
                             fprintf(out_file_W_xyeta,
@@ -235,6 +241,10 @@ void Cell_info::OutputEvolutionDataXYEta(SCGrid &arena, double tau) {
                             fprintf(out_file_bulkpi_xyeta,"%e %e %e\n", bulk_Pi, enthropy, cs2_local);
                         }
                     }
+		    if (DATA.turn_on_diff == 1) {
+		        fprintf(out_file_q_xyeta, "%e %e %e %e %e\n", common_term_q, qtau, qx, qy, qeta);
+		    }
+
                 } else {
                     float array[] = {static_cast<float>(T_local*hbarc),
                                      static_cast<float>(muB_local*hbarc),

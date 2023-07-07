@@ -504,8 +504,8 @@ void Init::initial_IPGlasma_XY(int ieta, SCGrid &arena_prev,
                                    *eta_envelop_ed);
                 epsilon = eos.get_s2e(local_sd, rhob, DATA.tau0);
             }
-            if (epsilon < 0.00000000001)
-                epsilon = 0.00000000001;
+            if (epsilon < 1e-10)
+                epsilon = 1e-10;
 
             arena_current(ix, iy, ieta).epsilon = epsilon;
             arena_current(ix, iy, ieta).rhob = rhob;
@@ -632,8 +632,8 @@ void Init::initial_IPGlasma_XY_with_pi(int ieta, SCGrid &arena_prev,
                                    *eta_envelop_ed);
                 epsilon = eos.get_s2e(local_sd, rhob, DATA.tau0);
             }
-            if (epsilon < 0.00000000001)
-                epsilon = 0.00000000001;
+            if (epsilon < 1e-10)
+                epsilon = 1e-10;
 
             arena_current(ix, iy, ieta).epsilon = epsilon;
             arena_current(ix, iy, ieta).rhob = rhob;
@@ -671,6 +671,87 @@ void Init::initial_IPGlasma_XY_with_pi(int ieta, SCGrid &arena_prev,
             arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
         }
     }
+
+    // for (int ix = 0; ix < nx; ix++) {
+    //     for (int iy = 0; iy < ny; iy++) {
+    //         int idx = iy + ix*ny;
+    //         std::getline(profile, dummy);
+    //         std::stringstream ss(dummy);
+    //         ss >> dummy1 >> dummy2 >> dummy3
+    //            >> density >> utau >> ux >> uy >> ueta
+    //            >> pitautau >> pitaux >> pitauy >> pitaueta
+    //            >> pixx >> pixy >> pixeta >> piyy >> piyeta >> pietaeta;
+    //         temp_profile_ed    [idx] = density;
+    //         temp_profile_ux    [idx] = ux;
+    //         temp_profile_uy    [idx] = uy;
+    //         temp_profile_ueta  [idx] = ueta*tau0;
+    //         temp_profile_utau  [idx] = sqrt(1. + ux*ux + uy*uy + ueta*ueta);
+    //         temp_profile_pixx  [idx] = pixx*DATA.sFactor;
+    //         temp_profile_pixy  [idx] = pixy*DATA.sFactor;
+    //         temp_profile_pixeta[idx] = pixeta*tau0*DATA.sFactor;
+    //         temp_profile_piyy  [idx] = piyy*DATA.sFactor;
+    //         temp_profile_piyeta[idx] = piyeta*tau0*DATA.sFactor;
+
+    //         utau = temp_profile_utau[idx];
+    //         ueta = ueta*tau0;
+    //         temp_profile_pietaeta[idx] = (
+    //             (2.*(  ux*uy*temp_profile_pixy[idx]
+    //                  + ux*ueta*temp_profile_pixeta[idx]
+    //                  + uy*ueta*temp_profile_piyeta[idx])
+    //              - (utau*utau - ux*ux)*temp_profile_pixx[idx]
+    //              - (utau*utau - uy*uy)*temp_profile_piyy[idx])
+    //             /(utau*utau - ueta*ueta));
+    //         temp_profile_pitaux  [idx] = (1./utau
+    //             *(  temp_profile_pixx[idx]*ux
+    //               + temp_profile_pixy[idx]*uy
+    //               + temp_profile_pixeta[idx]*ueta));
+    //         temp_profile_pitauy  [idx] = (1./utau
+    //             *(  temp_profile_pixy[idx]*ux
+    //               + temp_profile_piyy[idx]*uy
+    //               + temp_profile_piyeta[idx]*ueta));
+    //         temp_profile_pitaueta[idx] = (1./utau
+    //             *(  temp_profile_pixeta[idx]*ux
+    //               + temp_profile_piyeta[idx]*uy
+    //               + temp_profile_pietaeta[idx]*ueta));
+    //         temp_profile_pitautau[idx] = (1./utau
+    //             *(  temp_profile_pitaux[idx]*ux
+    //               + temp_profile_pitauy[idx]*uy
+    //               + temp_profile_pitaueta[idx]*ueta));
+    //         if (ix == 0 && iy == 0) {
+    //             DATA.x_size = -dummy2*2;
+    //             DATA.y_size = -dummy3*2;
+    //             if (omp_get_thread_num() == 0) {
+    //                 music_message << "eta_size=" << DATA.eta_size
+    //                               << ", x_size=" << DATA.x_size
+    //                               << ", y_size=" << DATA.y_size;
+    //                 music_message.flush("info");
+    //             }
+    //         }
+    //     }
+    // }
+
+    // for (int ix = 0; ix < nx; ix++) {
+    //     for (int iy = 0; iy< ny; iy++) {
+    //         int idx = iy + ix*ny;
+    //         if (DATA.Initial_profile == 9 || DATA.Initial_profile == 91) {
+    //             arena_current(ix, iy, ieta).u[0] = temp_profile_utau[idx];
+    //             arena_current(ix, iy, ieta).u[1] = temp_profile_ux[idx];
+    //             arena_current(ix, iy, ieta).u[2] = temp_profile_uy[idx];
+    //             arena_current(ix, iy, ieta).u[3] = temp_profile_ueta[idx];
+    //         } else {
+    // 	        if (ix == 0) {arena_current(ix, iy, ieta).u[1] = (eos.get_temperature(arena_current(ix+1,iy,ieta).epsilon,0,tau0)-eos.get_temperature(arena_current(ix,iy,ieta).epsilon,0,tau0))/0.1;}
+    // 		else if (ix == nx-1)  {arena_current(ix, iy, ieta).u[1] = (eos.get_temperature(arena_current(ix,iy,ieta).epsilon,0,tau0)-eos.get_temperature(arena_current(ix-1,iy,ieta).epsilon,0,tau0))/0.1;}
+    // 		else {arena_current(ix, iy, ieta).u[1] = (eos.get_temperature(arena_current(ix+1,iy,ieta).epsilon,0,tau0)-eos.get_temperature(arena_current(ix-1,iy,ieta).epsilon,0,tau0))/0.2;}
+
+    // 		if (iy == 0) {arena_current(ix, iy, ieta).u[2] = (eos.get_temperature(arena_current(ix,iy+1,ieta).epsilon,0,tau0)-eos.get_temperature(arena_current(ix,iy,ieta).epsilon,0,tau0))/0.1;}
+    // 		else if (iy == ny-1)  {arena_current(ix, iy, ieta).u[2] = (eos.get_temperature(arena_current(ix,iy,ieta).epsilon,0,tau0)-eos.get_temperature(arena_current(ix,iy-1,ieta).epsilon,0,tau0))/0.1;}
+    // 		else {arena_current(ix, iy, ieta).u[2] = (eos.get_temperature(arena_current(ix,iy+1,ieta).epsilon,0,tau0)-eos.get_temperature(arena_current(ix,iy-1,ieta).epsilon,0,tau0))/0.2;}
+		
+    // 		arena_current(ix, iy, ieta).u[0] = sqrt(1.+ arena_current(ix, iy, ieta).u[1]*arena_current(ix, iy, ieta).u[1] + arena_current(ix, iy, ieta).u[2]*arena_current(ix, iy, ieta).u[2]);
+    //             arena_current(ix, iy, ieta).u[3] = 0.0;
+    //         }
+    // 	}
+    // }
 
     // const std::string out_name = "evolution_xyeta.dat";
     // std::string out_open_mode = "w";
@@ -1166,6 +1247,7 @@ void Init::initial_cylindrical(int ieta, SCGrid &arena_prev,
 
             arena_current(ix, iy, ieta).epsilon = epsilon;
             arena_current(ix, iy, ieta).rhob = rhob;
+	    arena_current(ix, iy, ieta).proper_tau = DATA.tau0;
 
             arena_current(ix, iy, ieta).u[0] = 1;
             arena_current(ix, iy, ieta).u[1] = 0.0;

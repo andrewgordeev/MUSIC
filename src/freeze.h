@@ -107,7 +107,8 @@ typedef struct surfaceElement {
     double q[4];            // baryon diffusion current
     double pi_b;            // bulk pressure
     double rho_B;           // net baryon density
-
+    double light_fugacity;
+    double strange_fugacity;
     double epsilon_f;
     double T_f;
     double mu_B;
@@ -237,6 +238,8 @@ class Freeze{
                  int yflag, double minrap, double maxrap);
     double get_Nch(InitData *DATA, double minpt, double maxpt, int yflag,
                    double minrap, double maxrap);
+    void get_all_meanpt(InitData *DATA, double minpt, double maxpt, int yflag,
+			double minrap, double maxrap);
     double get_meanpt(InitData *DATA, int number, double minpt, double maxpt,
                       int yflag, double minrap, double maxrap);
     double get_vn_ch(InitData *DATA, double minpt, double maxpt, int yflag,

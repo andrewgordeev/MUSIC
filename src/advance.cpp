@@ -44,9 +44,9 @@ Advance::Advance(const EOS &eosIn, const InitData &DATA_in,
 //! this function evolves one Runge-Kutta step in tau
 void Advance::AdvanceIt(double tau, SCGrid &arena_prev, SCGrid &arena_current,
                        SCGrid &arena_future, int rk_flag) {
-  const int grid_neta = arena_current.nEta();
-  const int grid_nx   = arena_current.nX();
-  const int grid_ny   = arena_current.nY();
+    const int grid_neta = arena_current.nEta();
+    const int grid_nx   = arena_current.nX();
+    const int grid_ny   = arena_current.nY();
 
     #pragma omp parallel for collapse(3) schedule(guided)
     for (int ieta = 0; ieta < grid_neta; ieta++)
@@ -55,7 +55,7 @@ void Advance::AdvanceIt(double tau, SCGrid &arena_prev, SCGrid &arena_current,
         double eta_s_local = - DATA.eta_size/2. + ieta*DATA.delta_eta;
         double x_local     = - DATA.x_size  /2. +   ix*DATA.delta_x;
         double y_local     = - DATA.y_size  /2. +   iy*DATA.delta_y;
-
+	
         FirstRKStepT(tau, x_local, y_local, eta_s_local,
                      arena_current, arena_future, arena_prev,
                      ix, iy, ieta, rk_flag);
@@ -81,6 +81,8 @@ void Advance::AdvanceIt(double tau, SCGrid &arena_prev, SCGrid &arena_current,
                          baryon_diffusion_vector, ieta, ix, iy);
         }
     }
+
+    Advection(arena_current, arena_future);
 }
 
 
@@ -147,10 +149,6 @@ void Advance::FirstRKStepT(const double tau, double x_local, double y_local,
     }
 
     int flag = 0;
-    if (ix > 340 and ix < 360 and iy == 500) {
-      //std::cout << "2: " << qi[0] << std::endl;
-        flag = 1;
-    }
     
     double tau_next = tau + DATA.delta_tau;
     auto grid_rk_t = reconst_helper.ReconstIt_shell(tau_next, qi, arena_current(ix, iy, ieta), flag);
@@ -299,12 +297,50 @@ void Advance::FirstRKStepW(
     }
 }
 
+// spatial component of proper time evolution
+// current version neglects eta dimension
+void Advance::Advection(SCGrid&arena_current, SCGrid &arena_future) {
+    double proper_tau_prev[arena_current.nX()][arena_current.nY()][arena_current.nEta()];
+    for (int ieta = 0; ieta < arena_current.nEta(); ieta++)
+    for (int ix   = 0; ix   < arena_current.nX();   ix++  )
+    for (int iy   = 0; iy   < arena_current.nY();   iy++  ) {
+        proper_tau_prev[ix][iy][ieta] = arena_future(ix,iy,ieta).proper_tau;
+    }
+  
+    for (int ieta = 0; ieta < arena_current.nEta(); ieta++)
+    for (int ix   = 0; ix   < arena_current.nX();   ix++  )
+    for (int iy   = 0; iy   < arena_current.nY();   iy++  ) {
+        double eta = 0.0;
+        if (DATA.boost_invariant == 0) {
+            eta = ((static_cast<double>(ieta))*(DATA.delta_eta)
+                    - (DATA.eta_size)/2.0);
+        }
+	
+        double vxmid = 0.5*(arena_current(ix,iy,ieta).u[1]/(cosh(eta)*arena_current(ix,iy,ieta).u[0]+sinh(eta)*arena_current(ix,iy,ieta).u[3]) + arena_future(ix,iy,ieta).u[1]/(cosh(eta)*arena_future(ix,iy,ieta).u[0]+sinh(eta)*arena_future(ix,iy,ieta).u[3]));
+	double vymid = 0.5*(arena_current(ix,iy,ieta).u[2]/(cosh(eta)*arena_current(ix,iy,ieta).u[0]+sinh(eta)*arena_current(ix,iy,ieta).u[3]) + arena_future(ix,iy,ieta).u[2]/(cosh(eta)*arena_future(ix,iy,ieta).u[0]+sinh(eta)*arena_future(ix,iy,ieta).u[3]));
+
+	double xm = -vxmid*DATA.delta_tau/DATA.delta_x;
+	double ym = -vymid*DATA.delta_tau/DATA.delta_y;
+
+	double wx[2] = {(1. - fabs(xm)), fabs(xm)};
+        double wy[2] = {(1. - fabs(ym)), fabs(ym)};
+	double proper_tau = 0;
+
+	for (int jx = 0; jx < 2; jx++)
+	for (int jy = 0; jy < 2; jy++) {
+            proper_tau += wx[jx]*wy[jy]*proper_tau_prev[ix + jx*Util::sign(xm)][iy + jy*Util::sign(ym)][ieta];     
+	}
+
+	arena_future(ix,iy,ieta).proper_tau = proper_tau;
+    }
+}
+
 // update results after RK evolution to grid_pt
 void Advance::UpdateTJbRK(const ReconstCell &grid_rk, Cell_small &grid_pt) {
     grid_pt.epsilon = grid_rk.e;
     grid_pt.rhob    = grid_rk.rhob;
     grid_pt.u       = grid_rk.u;
-    grid_pt.proper_tau += 2*DATA.delta_tau/grid_pt.u[0];
+    grid_pt.proper_tau = grid_rk.proper_tau;
 }/* UpdateTJbRK */
 
 
@@ -312,7 +348,7 @@ void Advance::UpdateTJbRK(const ReconstCell &grid_rk, Cell_small &grid_pt) {
 //! in the dilute region to stablize numerical simulations
 void Advance::QuestRevert(double tau, Cell_small *grid_pt,
                           int ieta, int ix, int iy) {
-    double eps_scale = 0.5;   // 1/fm^4
+    double eps_scale = 0.1;   // 1/fm^4
     double e_local   = grid_pt->epsilon;
     double rhob      = grid_pt->rhob;
     double proper_tau = grid_pt->proper_tau;
@@ -320,7 +356,7 @@ void Advance::QuestRevert(double tau, Cell_small *grid_pt,
     // regulation factor in the default MUSIC
     // double factor = 300.*tanh(grid_pt->epsilon/eps_scale);
     double xi = 0.05;
-    double factor = 100.*(1./(exp(-(e_local - eps_scale)/xi) + 1.)
+    double factor = 10.*DATA.quest_revert_strength*(1./(exp(-(e_local - eps_scale)/xi) + 1.)
                           - 1./(exp(eps_scale/xi) + 1.));
     double factor_bulk = factor;
 
@@ -385,10 +421,10 @@ void Advance::QuestRevert(double tau, Cell_small *grid_pt,
 //! in the dilute region to stablize numerical simulations
 void Advance::QuestRevert_qmu(double tau, Cell_small *grid_pt,
                               int ieta, int ix, int iy) {
-    double eps_scale = 0.5;   // in 1/fm^4
+    double eps_scale = 0.1;   // in 1/fm^4
 
     double xi = 0.05;
-    double factor = 100.*(1./(exp(-(grid_pt->epsilon - eps_scale)/xi) + 1.)
+    double factor = 10.*DATA.quest_revert_strength*(1./(exp(-(grid_pt->epsilon - eps_scale)/xi) + 1.)
                           - 1./(exp(eps_scale/xi) + 1.));
 
     double q_mu_local[4];
@@ -451,12 +487,6 @@ void Advance::MakeDeltaQI(const double tau, SCGrid &arena_current,
         qi[alpha] = get_TJb(arena_current(ix, iy, ieta), alpha, 0)*tau;
     }
 
-    int flag = 0;
-    if (ix > 340 and ix < 360 and iy == 500) {
-      //std::cout << "1: " << qi[0] << std::endl;
-	flag = 1;
-    }
-
     TJbVec qiphL   = {0.};
     TJbVec qiphR   = {0.};
     TJbVec qimhL   = {0.};
@@ -480,17 +510,14 @@ void Advance::MakeDeltaQI(const double tau, SCGrid &arena_current,
             qiphR[alpha] = gphR + fphR;
             qimhL[alpha] = gmhL + fmhL;
             qimhR[alpha] = gmhR + fmhR;
-	    // if (flag == 1 and alpha == 0) {std::cout << "1.5: " << qiphL[0] << " " << qiphR[0] << " " << qimhL[0] << " " << qimhR[0] << std::endl;}
         }
 
         // for each direction, reconstruct half-way cells
         // reconstruct e, rhob, and u[4] for half way cells
-        auto grid_phL = reconst_helper.ReconstIt_shell(tau, qiphL, c, flag);
-        auto grid_phR = reconst_helper.ReconstIt_shell(tau, qiphR, c, flag);
-        auto grid_mhL = reconst_helper.ReconstIt_shell(tau, qimhL, c, flag);
-        auto grid_mhR = reconst_helper.ReconstIt_shell(tau, qimhR, c, flag);
-
-        //if (flag == 1) {std::cout << "Printing: " << grid_phL.e << " " << grid_phL.e << " " << grid_mhL.e << " " << grid_mhR.e << std::endl;}
+        auto grid_phL = reconst_helper.ReconstIt_shell(tau, qiphL, c, 1);
+        auto grid_phR = reconst_helper.ReconstIt_shell(tau, qiphR, c, 1);
+        auto grid_mhL = reconst_helper.ReconstIt_shell(tau, qimhL, c, 1);
+        auto grid_mhR = reconst_helper.ReconstIt_shell(tau, qimhR, c, 1);
 	
         double aiphL = MaxSpeed(tau, direction, grid_phL);
         double aiphR = MaxSpeed(tau, direction, grid_phR);
@@ -513,7 +540,6 @@ void Advance::MakeDeltaQI(const double tau, SCGrid &arena_current,
                                - aiph*(qiphR[alpha] - qiphL[alpha]));
             double Fimh = 0.5*((FimhL + FimhR)
                                - aimh*(qimhR[alpha] - qimhL[alpha]));
-	    //if (ix > 90 and ix < 120 and iy == 150) {std::cout << "Printing: " << ix << " " << Fiph << " " << Fimh << std::endl;
             if (direction == 3 && (alpha == 0 || alpha == 3)) {
                 T_eta_m[alpha] = Fimh;
                 T_eta_p[alpha] = Fiph;
@@ -645,10 +671,7 @@ double Advance::get_TJb(const ReconstCell &grid_p, const int rk_flag,
     }
     const double pressure = eos.get_pressure(e, rhob, proper_tau);
     const double T_munu   = (e + pressure)*u_mu*u_nu + pressure*gfac;
-    //if (ix > 90 and ix < 120 and iy == 150 and mu == 0 and nu == mu) {std::cout << "Printing: " << ix << " " << iy << " " << e << " " << T_munu << " " << pressure << std::endl;}
-    //if (mu == 0 and mu == nu and (e < 0.9999*T_munu or e > 1.0001*T_munu)) {std::cout << "Printing: " << e << " " << T_munu << std::endl;}
-    //if (mu != 0 and nu != 0) {std::cout << "Printing: " << mu << " " << nu <<  std::endl;}
-    //if (e > 0.1 and e < 0.17) {std::cout << "Printing: " << e << " " << pressure << " " << mu << " " << nu << " " << T_munu << std::endl;}
+
     return(T_munu);
 }
 
@@ -675,8 +698,6 @@ double Advance::get_TJb(const Cell_small &grid_p, const int mu, const int nu) {
     }
     const double pressure = eos.get_pressure(e, rhob, proper_tau);
     const double T_munu   = (e + pressure)*u_mu*u_nu + pressure*gfac;
-    //if ((mu != 0 and nu == mu)) {std::cout << "Printing: " << e << " " << T_munu << std::endl;}
-    //if (mu == 0 and mu == nu and (e < 0.9999*T_munu or e > 1.0001*T_munu)) {std::cout << "Printing: " << e << " " << T_munu << std::endl;}
-    //if (e > 0.1 and e < 0.17) {std::cout << "Printing: " << e << " " << pressure << " " << mu << " " << nu << " " << T_munu << std::endl;}
+
     return(T_munu);
 }

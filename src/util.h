@@ -23,6 +23,7 @@ namespace Util {
 
     double theta(const double x);
     double gmn(const int a);
+    int sign(const double x);
 
     double **mtx_malloc(const int n1, const int n2);
 

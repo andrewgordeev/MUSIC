@@ -29,9 +29,9 @@ ReconstCell Reconst::ReconstIt_shell(double tau, const TJbVec &tauq_vec,
     for (int i = 0; i < 5; i++) {
         q_vec[i] = tauq_vec[i]/tau;
     }
-    //    if (flag2 == 1) {std::cout << "3: " << q_vec[0]*tau << std::endl;}
-    int flag = ReconstIt_velocity_Newton(grid_p1, tau, q_vec, grid_pt, flag2);
 
+    int flag = ReconstIt_velocity_Newton(grid_p1, tau, q_vec, grid_pt, flag2);
+    
     if (flag == -1) {
         revert_grid(grid_p1, grid_pt);
     } else if (flag == -2) {
@@ -92,12 +92,10 @@ int Reconst::ReconstIt_velocity_Newton(ReconstCell &grid_p, double tau,
     if (v_status == 0) {
         return(-1);
     }
-    // if (v_solution > 0) {std::cout << "Printing: " << v_guess << " " << v_solution << std::endl;}
 
     if (v_solution < v_critical) {
         u[0] = 1./(sqrt(1. - v_solution*v_solution) + v_solution*abs_err);
         epsilon = T00 - v_solution*sqrt(K00);
-	//	if (std::abs((epsilon-grid_pt.epsilon)/grid_pt.epsilon) > 1 and grid_pt.epsilon > 1e-5) {std::cout << "Printing: " << grid_pt.epsilon << " " << epsilon << " " << v_solution << std::endl;}
         rhob = J0/u[0];
        
     } else {  // for large velocity, solve u0
@@ -114,7 +112,7 @@ int Reconst::ReconstIt_velocity_Newton(ReconstCell &grid_p, double tau,
 
     double check_u0_var = std::abs(u[0] - grid_pt.u[0])/grid_pt.u[0];
  
-    if (check_u0_var > 1.00001) {
+    if (check_u0_var > 100) {
         if (grid_pt.epsilon > 1e-6 && echo_level > 2) {
             music_message << "Reconst velocity Newton:: "
                           << "u0 varies more than 100 times compared to "
@@ -139,8 +137,6 @@ int Reconst::ReconstIt_velocity_Newton(ReconstCell &grid_p, double tau,
     u[2] = q[2]*velocity_inverse_factor;
     u[3] = q[3]*velocity_inverse_factor;
 
-    //if (flag == 1) {std::cout << "3: " << q[1] << " " << velocity_inverse_factor << " " << u[1] << " " << T00 - epsilon << " " << pressure << std::endl;}
-    
     // Correcting normalization of 4-velocity
     double u_mag_sq = u[1]*u[1] + u[2]*u[2] + u[3]*u[3];
     if (fabs(u[0]*u[0] - u_mag_sq - 1.0) > abs_err) {
@@ -154,6 +150,8 @@ int Reconst::ReconstIt_velocity_Newton(ReconstCell &grid_p, double tau,
     for (int mu = 0; mu < 4; mu++) {
        grid_p.u[mu] = u[mu];
     }
+
+    grid_p.proper_tau = proper_tau + (1./DATA.rk_order)*DATA.delta_tau/grid_p.u[0];
 
     return(1);
 }
@@ -187,7 +185,6 @@ int Reconst::solve_velocity_Newton(const double v_guess, const double T00,
         v_next = std::max(0.0, std::min(1.0, v_next));
         abs_error_v = fv;
         rel_error_v = 2.*abs_error_v/(v_next + v_prev + 1e-15);
-	//if (v_prev > 0 and std::abs((v_next-v_prev)/v_prev) > 1e4) {std::cout << v_next << " " << abs_error_v << " " << rel_error_v << std::endl;}
         v_prev = v_next;
         if (iter > max_iter) {
             v_status = 0;
@@ -265,7 +262,6 @@ void Reconst::reconst_velocity_fdf(const double v, const double T00,
     const double dPdrho   = eos.get_dpdrhob(epsilon, rho, proper_tau);
 
     fv   = v - M/temp1;
-    //if (std::abs((v-fv)/v) > 10000) {std::cout << "Printing: " << v << " " << M << " " << T00 << " " << pressure << std::endl;}
     dfdv = 1. - M/(temp1*temp1)*(M*dPde + J0*temp2*dPdrho);
 }
 

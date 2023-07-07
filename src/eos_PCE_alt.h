@@ -4,13 +4,15 @@
 #define SRC_EOS_PCE_H_
 
 #include "eos_base.h"
+#include "data.h"
 
 class EOS_PCE : public EOS_base {
  private:
     double T_max;
+    const InitData &DATA;
    
  public:
-    EOS_PCE();
+    EOS_PCE(const InitData &DATA_in);
     
     void initialize_eos();
     double p_e_func       (double e, double rhob, double proper_tau) const;
@@ -19,7 +21,8 @@ class EOS_PCE : public EOS_base {
     double get_s2e        (double s, double rhob, double proper_tau) const;
     double get_T2e        (double T, double rhob, double proper_tau) const;
     double get_fugacity  (double proper_tau) const;
-    double get_cs2        (double e, double rhob, double proper_tau) const;
+  //double get_cs2        (double e, double rhob, double proper_tau) const;
+    double get_entropy   (double e, double rhob, double proper_tau) const;
     // returns maximum temperature of the EoS table
     // in the unit of [1/fm]
     void   set_T_max(double T_max_in) {T_max = T_max_in;}

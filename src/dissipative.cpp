@@ -54,6 +54,7 @@ void Diss::MakeWSource(const double tau,
         double dWdtau = (grid_pt.Wmunu[idx_1d_alpha0]
                          - grid_pt_prev.Wmunu[idx_1d_alpha0])/DATA.delta_tau;
 
+
         /* bulk pressure term */
         double dPidtau = 0.0;
         double Pi_alpha0 = 0.0;
@@ -64,6 +65,10 @@ void Diss::MakeWSource(const double tau,
                                     *(gfac + grid_pt_prev.u[alpha]
                                              *grid_pt_prev.u[0]))
                        /DATA.delta_tau);
+	    
+            if (std::isnan(grid_pt.pi_b)) {
+	      std::cout << "Invalid pi_b!" << std::endl;
+	       return;}
         }
 
         double dWdx  = 0.0;  // partial_i (tau W^{i \alpha})
@@ -110,6 +115,7 @@ void Diss::MakeWSource(const double tau,
         double sf = tau*dWdtau + grid_pt.Wmunu[idx_1d_alpha0] + dWdx;
         double bf = tau*dPidtau + Pi_alpha0 + dPidx;
         dwmn[alpha] += sf + bf;
+
         if (std::isnan(sf + bf)) {
             music_message << "[Error]Diss::MakeWSource: ";
             music_message << "sf=" << sf << " bf=" << bf
@@ -661,6 +667,7 @@ double Diss::Make_uPiSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt
     Bulk_Relax_time = (transport_coeffs_.get_bulk_relax_time_factor()
                        /((1./3. - cs2)*(1./3. - cs2))
                        /(epsilon + pressure)*bulk);
+
     Bulk_Relax_time = std::max(3.*DATA.delta_tau, Bulk_Relax_time);
 
     // from kinetic theory, small mass limit
@@ -683,7 +690,7 @@ double Diss::Make_uPiSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt
              - transport_coeff1*theta_local*(grid_pt->pi_b));
 
     // Computing nonlinear term: + transport_coeff2*Bulk*Bulk
-    if (include_BBterm == 1) {
+    if (include_BBterm == 1) {    
         BB_term = (transport_coeff2*(grid_pt->pi_b)
                    *(grid_pt->pi_b));
     } else {
@@ -727,9 +734,11 @@ double Diss::Make_uPiSource(double tau, Cell_small *grid_pt, Cell_small *grid_pt
     } else {
         Coupling_to_Shear = 0.0;
     }
-
+    
     // Final Answer
     Final_Answer = NS_term + tempf + BB_term + Coupling_to_Shear;
+
+    if (std::isnan(tempf)) {std::cout << "ALERT" << std::endl;}
 
     return Final_Answer/(Bulk_Relax_time);
 }/* Make_uPiSource */

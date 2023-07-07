@@ -2199,6 +2199,7 @@ void Cornelius::surface_3d(double ***cube, double *pos, int do_print)
   //If all or none of the elements are below the criterion, no surface
   //elements exist.
   int above = 0;
+
   for (int i=0; i < STEPS; i++) {
     for (int j=0; j < STEPS; j++) { 
       for (int k=0; k < STEPS; k++) {
@@ -2207,11 +2208,13 @@ void Cornelius::surface_3d(double ***cube, double *pos, int do_print)
       }
     }
   }
+
   if ( above == 0 || above == 8 ) {
     //No elements in this cube
     Nelements = 0;
     return;
   }
+
   //This cube has surface elements, so let's start by constructing
   //the cube.
   int c_i = 0;

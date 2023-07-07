@@ -12,7 +12,7 @@
 #include <iostream>
 #include <memory>
 
-EOS::EOS(const int eos_id_in) : eos_id(eos_id_in)  {
+EOS::EOS(const InitData &DATA_in) : eos_id(DATA_in.whichEOS), DATA(DATA_in) {
     if (eos_id == 0) {
         eos_ptr = std::unique_ptr<EOS_idealgas> (new EOS_idealgas ());
     } else if (eos_id == 1) {
@@ -28,7 +28,7 @@ EOS::EOS(const int eos_id_in) : eos_id(eos_id_in)  {
     } else if (eos_id == 17) {
         eos_ptr = std::unique_ptr<EOS_BEST> (new EOS_BEST ());
     } else if (eos_id == 18) {
-        eos_ptr = std::unique_ptr<EOS_PCE> (new EOS_PCE ());
+        eos_ptr = std::unique_ptr<EOS_PCE> (new EOS_PCE (DATA));
     } else {
         std::cout << "No EOS for eos_id = " << std::endl;
         exit(1);

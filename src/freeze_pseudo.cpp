@@ -114,7 +114,7 @@ void Freeze::ReadSpectra_pseudo(InitData* DATA, int full, int verbose) {
     }
 
     // phiArray for use in Edndp3 interpolation function
-    // during resonance decay calculation
+    // during resonance decay calcuation
     if (phiArray == NULL) {
         phiArray = new double[iphimax];
         for (int iphi = 0; iphi < iphimax; iphi++) {
@@ -129,6 +129,7 @@ void Freeze::ReadSpectra_pseudo(InitData* DATA, int full, int verbose) {
 // adapted from ML and improved on performance (C. Shen 2015)
 void Freeze::ComputeParticleSpectrum_pseudo_improved(InitData *DATA,
                                                      int number) {
+
     double y_minus_eta_cut = 4.0;
     int j = partid[MHALF+number];
     // set some parameters
@@ -362,7 +363,8 @@ void Freeze::ComputeParticleSpectrum_pseudo_improved(InitData *DATA,
                 if (DATA->turn_on_rhob == 1) {
                     rhoB = surface[icell].rho_B;
                 }
-
+                double light_fugacity = surface[icell].light_fugacity;
+		double strange_fugacity = surface[icell].strange_fugacity;
                 double eps_plus_P_over_T = surface[icell].eps_plus_p_over_T_FO;
                 double prefactor_shear = 1./(2.*eps_plus_P_over_T*T*T*T)*hbarc; 
                                                                 // fm^4/GeV^2
@@ -392,7 +394,10 @@ void Freeze::ComputeParticleSpectrum_pseudo_improved(InitData *DATA,
                             double E = (ptau*u_flow[0] - px*u_flow[1]
                                         - py*u_flow[2] - peta*u_flow[3]);
                             // this is the equilibrium f, f_0:
-                            double f = 1./(exp(1./T*(E - mu)) + sign);
+			    //double f = 1./(exp(1./T*(E - mu))/pow(light_fugacity,(1.25+0.25*sign))+sign);
+		            double f;
+			    if (DATA->tau_eq_l != 0 or DATA->tau_eq_s != 0) {f = 1./(exp(1./T*(E - mu))/pow((0.15+0.85*pow(light_fugacity,2)),(1.25 + 0.25*sign)) + sign);}
+			    else {f = 1./(exp(1./T*(E - mu)) + sign);}
                      
                             // now comes the delta_f: check if still correct
                             // at finite mu_b 
@@ -524,6 +529,7 @@ void Freeze::ComputeParticleSpectrum_pseudo_improved(InitData *DATA,
             }
         }
         double prefactor = deg/(pow(2.*M_PI,3.)*pow(hbarc,3.));
+
         // store the final results
         for (int ipt = 0; ipt < iptmax; ipt++) {
             for (int iphi = 0; iphi < iphimax; iphi++) {
@@ -722,7 +728,8 @@ void Freeze::ComputeParticleSpectrum_pseudo_boost_invariant(
                 Pi_bulk = surface[icell].pi_b;
                 getbulkvisCoefficients(T, bulk_deltaf_coeffs);
             }
-
+	    double light_fugacity = surface[icell].light_fugacity;
+	    double strange_fugacity = surface[icell].strange_fugacity;
             double eps_plus_P_over_T = surface[icell].eps_plus_p_over_T_FO;
             double prefactor_shear = 1./(2.*eps_plus_P_over_T*T*T*T)*hbarc; 
                                                                 // fm^4/GeV^2
@@ -749,7 +756,10 @@ void Freeze::ComputeParticleSpectrum_pseudo_boost_invariant(
                         double E = (ptau*u_flow[0] - px*u_flow[1]
                                     - py*u_flow[2]- peta*u_flow[3]);
                         // this is the equilibrium f, f_0:
-                        double f = 1./(exp(1./T*(E - mu)) + sign);
+			//double f = 1./(exp(1./T*(E - mu))/pow(light_fugacity,(1.25+0.25*sign))+sign);
+			double f;
+			if (DATA->tau_eq_l != 0 or DATA->tau_eq_s != 0) {f = 1./(exp(1./T*(E - mu))/pow((0.15+0.85*pow(light_fugacity,2)),(1.25 + 0.25*sign)) + sign);}
+			else {f = 1./(exp(1./T*(E - mu)) + sign);}
                     
                         // now comes the delta_f: check if still correct
                         // at finite mu_b 
@@ -1081,7 +1091,7 @@ void Freeze::compute_thermal_particle_spectra_and_vn(InitData* DATA) {
                       << "some of the spectra are not available.";
         music_message.flush("warning");
     } else {
-        int pid_list [] = {211, -211, 321, -321, 2212, -2212};
+        int pid_list [] = {211, -211, 321, -321, 2212, -2212, 3312};
         int pid_list_length = sizeof(pid_list)/sizeof(int);
         for (int k = 0; k < pid_list_length; k++) {
             int number = pid_list[k];
@@ -1105,7 +1115,7 @@ void Freeze::compute_final_particle_spectra_and_vn(InitData* DATA) {
     }
     ReadSpectra_pseudo(DATA, 1, 1);  // read in particle spectra information
     
-    if (DATA->NumberOfParticlesToInclude > 200) {
+    if (DATA->NumberOfParticlesToInclude > 100) {
         if ((DATA-> whichEOS != 7 && particleMax < 320)
                 || ((DATA->whichEOS == 7) && particleMax < 327)) {
             music_message << "Not all hadronic species are computed "
@@ -1119,7 +1129,7 @@ void Freeze::compute_final_particle_spectra_and_vn(InitData* DATA) {
         // for PHENIX pT cut
         Output_charged_IntegratedFlow(DATA, 0.15, 3.0, -0.5, 0.5);
         // for ALICE or STAR pT cut
-        Output_charged_IntegratedFlow(DATA, 0.2, 3.0, -0.5, 0.5);
+        Output_charged_IntegratedFlow(DATA, 0.2, 3.0, -0.8, 0.8);
         // for CMS pT cut
         Output_charged_IntegratedFlow(DATA, 0.3, 3.0, -0.5, 0.5);
 
@@ -1135,7 +1145,7 @@ void Freeze::compute_final_particle_spectra_and_vn(InitData* DATA) {
         music_message.flush("warning");
     } else {
         // calculate spectra and vn for identified particles
-        int pid_list [] = {211, -211, 321, -321, 2212, -2212};
+        int pid_list [] = {211, -211, 321, -321, 2212, -2212,3312};
         int pid_list_length = sizeof(pid_list)/sizeof(int);
         for (int k = 0; k < pid_list_length; k++) {
             int number = pid_list[k];
@@ -1161,12 +1171,14 @@ void Freeze::CooperFrye_pseudo(int particleSpectrumNumber, int mode,
     }
     if (mode==4 || mode==1) { //  do resonance decays
         perform_resonance_decays(DATA);
-    } 
+    }
+
     if (mode==13 || mode == 3 || mode == 1) {
         compute_thermal_particle_spectra_and_vn(DATA);
     } 
     if (mode==14 || mode == 4 || mode == 1) {
         compute_final_particle_spectra_and_vn(DATA);
+	get_all_meanpt(DATA, 0.2, 3.0, 0, -0.8, 0.8);
     } 
 
     // clean up
@@ -1211,7 +1223,7 @@ void Freeze::rapidity_integrated_flow(
     int neta = particleList[j].ny;
     double intvn[ptsize][nharmonics][2] = {};
     double m = particleList[j].mass;
-   
+ 
     double testmin;
     if (yflag) {
         if (DATA->pseudofreeze == 1)
@@ -1232,7 +1244,7 @@ void Freeze::rapidity_integrated_flow(
         music_message << particleList[j].y[0] << "  " << particleList[j].pt[0] << "   "
              << m;
         music_message.flush("error");
-        exit(1);
+	exit(1);
     }
     double testmax;
     if (yflag) {
@@ -1250,7 +1262,7 @@ void Freeze::rapidity_integrated_flow(
         music_message << "Error: called out of range rapidity in rap_integrated_flow, "
              << maxrap << " > maximum " << testmax;
         music_message.flush("error");
-        exit(1);
+	exit(1);
     }
     if (minrap > maxrap) {
         music_message << "Error in rap_integrated_flow: "
@@ -1261,8 +1273,9 @@ void Freeze::rapidity_integrated_flow(
    
     // loop over pt
     for (int ipt = 0; ipt < npt; ipt++) {
+  
         double pt = particleList[j].pt[ipt];
-     
+
         // Integrate over phi using trapezoid rule
         for (int iphi = 0; iphi < nphi; iphi++) {
             double ylist[etasize] = {0};
@@ -1297,8 +1310,10 @@ void Freeze::rapidity_integrated_flow(
                              *particleList[j].dNdydptdphi[ieta][ipt][iphi]);
                 }
             }
+
             gsl_interp_accel *acc = gsl_interp_accel_alloc ();
             gsl_spline *spline = gsl_spline_alloc (gsl_interp_linear, neta);
+
             if (yflag) {
                 // rapidity
                 gsl_spline_init (spline, ylist, dndpt , neta);
@@ -1306,7 +1321,7 @@ void Freeze::rapidity_integrated_flow(
                 // pseudo-rapidity
                 gsl_spline_init (spline, etalist, dndpt , neta);
             }
-   
+
             double dNdp;
             if (minrap < maxrap) {
                 // integrated from minrap to maxrap
@@ -1372,7 +1387,9 @@ void Freeze::pt_and_rapidity_integrated_flow(InitData *DATA, int number,
   
     // do rapidity-integral first
     double vnpt[nharmonics][2][etasize] = {};
+
     rapidity_integrated_flow(DATA, number, yflag,  minrap, maxrap, vnpt);
+
     double dndpt[ptsize];
     for (int ipt = 0; ipt < npt; ipt++) {
         dndpt[ipt] = vnpt[0][0][ipt];
@@ -1449,7 +1466,8 @@ void Freeze::OutputDifferentialFlowAtMidrapidity(
     fname2 += "vnpt_eta-";
     tmpStr2 << number;
     fname2 += tmpStr.str();
-    fname2 += ".dat"; 
+    fname2 += ".dat";
+
     
     // Open output file for vn
     ofstream outfilevn;
@@ -1678,7 +1696,6 @@ void Freeze::Output_charged_IntegratedFlow(
          << pT_min << " < p_T < " << pT_max << " and "
          << eta_min << " < eta < " << eta_max << "...";
     music_message.flush("info");
-    
     // Set output file name
     stringstream fname;
     fname << "./outputs/vnch_pT_" << pT_min << "_" << pT_max 
@@ -1829,6 +1846,49 @@ double Freeze::get_vn_ch(InitData *DATA, double minpt, double maxpt, int yflag,
     return sqrt(numr*numr+numi*numi)/den;
 }
 
+void Freeze::get_all_meanpt(InitData *DATA, double minpt, double maxpt, int yflag,
+			    double minrap, double maxrap) {
+    int pid_list [] = {211, -211, 321, -321, 2212, -2212, 3312};
+    int pid_list_length = sizeof(pid_list)/sizeof(int);
+
+    music_message << "Calculating mean pT...";
+    music_message.flush("info");
+    
+    stringstream tmpStr;
+    tmpStr << "./outputs/mean_pT.dat";
+
+    ofstream outfile;
+    outfile.open(tmpStr.str().c_str(), ios::trunc);
+    // header
+    outfile << "#particle_id mean_pT" << endl;
+
+    // calculate and print overall <pT>
+    double numr = 0.;  // numerator (\sum N*pT)
+    double den = 0.;   // denominator (\sum N)
+    for (int k=0; k< charged_hadron_list_length; k++) {
+        int number = charged_hadron_list[k];
+        int j = partid[MHALF+number];
+	int npt = particleList[j].npt;
+	double vn[nharmonics][2];
+	double meanpt = get_meanpt(DATA, number, particleList[j].pt[0], particleList[j].pt[npt-1], 1, DATA->dNdyptdpt_y_min, DATA->dNdyptdpt_y_max);
+	pt_and_rapidity_integrated_flow(DATA, number, minpt, maxpt, yflag, minrap, maxrap, vn);
+        numr+= meanpt*vn[0][0];
+        den+= vn[0][0];
+    }
+    outfile << "0 " << numr/den << endl;
+    
+    // print <pT> for selected hadrons
+    for (int k = 0; k < pid_list_length; k++) {
+	int number = pid_list[k];
+	int j = partid[MHALF+number];
+	int npt = particleList[j].npt;
+	double meanpt = get_meanpt(DATA, number, particleList[j].pt[0], particleList[j].pt[npt-1], 1, DATA->dNdyptdpt_y_min, DATA->dNdyptdpt_y_max);
+	outfile << number << " " << meanpt << endl;
+    }
+
+    outfile.close();
+  
+}
 
 // Return <pt> in specified range of phase space
 double Freeze::get_meanpt(InitData *DATA, int number,

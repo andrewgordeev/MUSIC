@@ -28,6 +28,12 @@ double gmn(const int a) {
     }
 }
 
+int sign(const double x) {
+    if (x > 0.) return 1;
+    else if (x < 0.) return -1;
+    else return 0;
+}
+
 
 double **mtx_malloc(const int n1, const int n2) {
     double **d1_ptr; 

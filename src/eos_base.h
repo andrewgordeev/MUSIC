@@ -4,9 +4,11 @@
 #define SRC_EOS_BASE_H_
 
 #include "pretty_ostream.h"
+#include "grid.h"
 
 #include <string>
 #include <vector>
+#include <gsl/gsl_spline.h>
 
 class EOS_base {
  private:
@@ -21,12 +23,18 @@ class EOS_base {
     pretty_ostream music_message;
     std::vector<double> nb_bounds;
     std::vector<double> e_bounds;
+    std::vector<double> fugl_bounds;
+    std::vector<double> fugs_bounds;
 
     std::vector<double> nb_spacing;
     std::vector<double> e_spacing;
+    std::vector<double> fugl_spacing;
+    std::vector<double> fugs_spacing;
 
     std::vector<int> nb_length;
     std::vector<int> e_length;
+    std::vector<int> fugl_length;
+    std::vector<int> fugs_length;
 
     double ***pressure_tb;
     double ***temperature_tb;
@@ -35,6 +43,13 @@ class EOS_base {
     double ***mu_C_tb;
     double ***cs2_tb;
     double ***energy_tb;
+    double ***entropy_tb;
+
+    gsl_interp_accel *acc;
+    gsl_spline *pressure_spline;
+    gsl_spline *temperature_spline;
+    gsl_spline *cs2_spline;
+    gsl_spline *entropy_spline;
 
     EOS_base() = default;
     virtual ~EOS_base();
@@ -62,6 +77,7 @@ class EOS_base {
 
     double interpolate1D(double e, int table_idx, double ***table) const;
     double interpolate2D(double e, double rhob, int table_idx, double ***table) const;
+    double interpolate3D(double e, double fugl, double fugs, double ***table) const;
 
     int    get_table_idx(double e) const;
     double get_entropy  (double epsilon, double rhob, double proper_tau) const;
@@ -86,7 +102,10 @@ class EOS_base {
     virtual double get_pressure   (double epsilon, double rhob, double proper_tau) const {return(0.0);}
     virtual double get_s2e        (double s, double rhob, double proper_tau) const {return(0.0);}
     virtual double get_T2e        (double T, double rhob, double proper_tau) const {return(0.0);}
+    virtual double get_light_fugacity (double proper_tau) const {return(0.0);}
+    virtual double get_strange_fugacity (double proper_tau) const {return(0.0);}
     virtual void   check_eos      () const {}
+    virtual double get_T_ratio    (Cell_small &cell) const {return(1.0);}
     
     void check_eos_with_finite_muB() const;
     void check_eos_no_muB() const;
