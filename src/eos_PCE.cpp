@@ -43,7 +43,7 @@ void EOS_PCE::initialize_eos() {
     energy_tb      = new double** [ntables];
     entropy_tb     = new double** [ntables];
 
-    std::ifstream pce_eos(path + "/PCE_eos_test5_e0p25spacing.dat", std::ios::binary);
+    std::ifstream pce_eos(path + "/PCE_eos_e0p25spacing.dat", std::ios::binary);
 
     for (int itable = 0; itable < ntables; itable++) {
         std::ifstream* eos_file;

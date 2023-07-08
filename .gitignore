@@ -28,3 +28,4 @@ inputfiles/
 ensemble_results/
 *spectra.dat
 *formation.dat
+EOS/PCE/*
