@@ -19,7 +19,6 @@ MUSIChydro
 *.dylib
 *.so
 outputs*
-test*
 saved_outputs/
 music_inputs/
 analysis/
