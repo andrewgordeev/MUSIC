@@ -1,5 +1,6 @@
 *.[oa]
 *.~
+*~
 eccentricities*.dat
 evolution*.dat
 surface*.dat
